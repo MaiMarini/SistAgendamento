@@ -90,7 +90,7 @@ export default function Sidebar({ navigation, state, menuItems, showLegend = tru
   return (
     <View style={styles.container}>
       <View style={styles.brand}>
-        <Text style={styles.brandName}>{displayName || 'Flor de Liz'}</Text>
+        <Text style={styles.brandName}>{displayName || ''}</Text>
       </View>
 
       <View style={styles.nav}>

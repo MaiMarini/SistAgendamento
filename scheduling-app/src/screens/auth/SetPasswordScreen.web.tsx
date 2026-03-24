@@ -107,7 +107,7 @@ export default function SetPasswordScreen({ onDone, mode = 'invite' }: Props) {
       <View style={styles.card}>
         {/* Brand */}
         <View style={styles.brand}>
-          <Text style={styles.brandName}>Flor de Liz</Text>
+          <Text style={styles.brandName}>{''}</Text>
           <Text style={styles.brandSubtitle}>Sistema de Agendamentos</Text>
         </View>
 

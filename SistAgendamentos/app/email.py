@@ -10,7 +10,7 @@ so they never block the HTTP response.
     MAIL_USERNAME   — Gmail address used to send (e.g. contato@empresa.com)
     MAIL_PASSWORD   — Gmail App Password (not the account password)
     MAIL_FROM       — From address shown to the recipient
-    MAIL_FROM_NAME  — Display name (e.g. "Flor de Liz")
+    MAIL_FROM_NAME  — Display name (e.g. "Sistema de Agendamentos")
     FRONTEND_URL    — Base URL of the web app (e.g. http://localhost:8081)
 """
 
@@ -34,7 +34,7 @@ _conf = ConnectionConfig(
     MAIL_USERNAME=os.getenv("MAIL_USERNAME", ""),
     MAIL_PASSWORD=os.getenv("MAIL_PASSWORD", ""),
     MAIL_FROM=os.getenv("MAIL_FROM", ""),
-    MAIL_FROM_NAME=os.getenv("MAIL_FROM_NAME", "Flor de Liz"),
+    MAIL_FROM_NAME=os.getenv("MAIL_FROM_NAME", ""),
     MAIL_PORT=int(os.getenv("MAIL_PORT", "587")),
     MAIL_SERVER=os.getenv("MAIL_SERVER", "smtp.gmail.com"),
     MAIL_STARTTLS=True,

@@ -1,4 +1,4 @@
-# SistAgendamentos — Flor de Liz
+# SistAgendamentos
 
 Plataforma B2B de agendamentos profissionais. Empresas gerenciam profissionais, clientes e agendamentos; profissionais acessam sua agenda e disponibilidade.
 
@@ -26,7 +26,7 @@ Plataforma B2B de agendamentos profissionais. Empresas gerenciam profissionais, 
 
 | | |
 |---|---|
-| **Nome** | SistAgendamentos / Flor de Liz |
+| **Nome** | SistAgendamentos |
 | **Tipo** | Plataforma B2B de agendamentos |
 | **Usuários** | Empresas (gestores) e Profissionais |
 | **Backend** | FastAPI + Supabase (PostgreSQL + Auth + Storage) |
@@ -361,7 +361,7 @@ SUPABASE_JWT_SECRET=<jwt-secret>
 MAIL_USERNAME=<seu-email>@gmail.com
 MAIL_PASSWORD=<app-password-gmail>
 MAIL_FROM=<seu-email>@gmail.com
-MAIL_FROM_NAME=Flor de Liz
+MAIL_FROM_NAME=Nome da Empresa
 MAIL_PORT=587
 MAIL_SERVER=smtp.gmail.com
 
@@ -488,7 +488,7 @@ Authorization: Bearer <supabase-access-token>
 
 ```json
 {
-  "name": "Flor de Liz",
+  "name": "Nome da Empresa",
   "cnpj": "12345678000190",
   "phone": "(67) 99999-9999",
   "email": "contato@flordeliz.com",

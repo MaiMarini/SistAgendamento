@@ -202,7 +202,7 @@ export default function LoginScreen() {
       <View style={[styles.scrollContent, isMobile && { paddingVertical: 32, paddingHorizontal: 16, justifyContent: 'flex-start' }]}>
         {/* Brand */}
         <View style={styles.brand}>
-          <Text style={styles.brandName}>Flor de Liz</Text>
+          <Text style={styles.brandName}>{''}</Text>
           <Text style={styles.brandSubtitle}>Sistema de Agendamentos</Text>
         </View>
 
