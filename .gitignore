@@ -1,0 +1,14 @@
+# IDE
+.idea/
+.vscode/
+
+# Python venv (raiz)
+venv/
+
+# Node (raiz)
+node_modules/
+package.json
+package-lock.json
+
+# Patch scripts temporários
+patch_*.js
