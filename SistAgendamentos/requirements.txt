@@ -5,3 +5,4 @@ python-dotenv
 fastapi-mail
 pydantic[email]
 PyJWT
+python-multipart
