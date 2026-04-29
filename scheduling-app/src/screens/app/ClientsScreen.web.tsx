@@ -703,7 +703,7 @@ function TabDetails({ client, onSaved }: { client: Client; onSaved: (updated: Cl
             </View>
             <View style={[{ flex: 1 }]}>
               <NativeDateInput
-                label="Data de Nascimento"
+                label="Data de Nasc."
                 value={form.guardianBirthDate}
                 onChange={v => setForm({ ...form, guardianBirthDate: v })}
                 max={today}
@@ -1513,7 +1513,7 @@ export default function ClientsScreen() {
                   <TF label="Nome Completo *" value={form.name} onChange={v => setForm({ ...form, name: v })} placeholder="Nome do cliente" />
                 </View>
                 <View style={[{ flex: 1 }]}>
-                  <NativeDateInput label="Data de Nascimento *" value={form.birthDate} onChange={v => setForm({ ...form, birthDate: v })} max={today} />
+                  <NativeDateInput label="Data de Nasc. *" value={form.birthDate} onChange={v => setForm({ ...form, birthDate: v })} max={today} />
                 </View>
               </View>
 
@@ -1565,7 +1565,7 @@ export default function ClientsScreen() {
                       <TF label="Nome do Responsável *" value={form.guardianName} onChange={v => setForm({ ...form, guardianName: v })} placeholder="Nome completo" />
                     </View>
                     <View style={[{ flex: 1 }]}>
-                      <NativeDateInput label="Data de Nascimento" value={form.guardianBirthDate} onChange={v => setForm({ ...form, guardianBirthDate: v })} max={today} />
+                      <NativeDateInput label="Data de Nasc." value={form.guardianBirthDate} onChange={v => setForm({ ...form, guardianBirthDate: v })} max={today} />
                     </View>
                   </View>
                   <View style={modalStyles.fieldRow}>
