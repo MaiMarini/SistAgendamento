@@ -50,18 +50,18 @@ Plataforma B2B de agendamentos profissionais. Empresas gerenciam profissionais, 
 ┌─────────────────────────────────────────────────────────┐
 │  Backend (FastAPI)                                      │
 │  SistAgendamentos/                                      │
-│  ┌──────────┐ ┌─────────────┐ ┌───────┐ ┌──────────┐  │
-│  │ routes.py│ │controllers.p│ │models │ │database.p│  │
-│  │ (HTTP)   │ │ (negócio)   │ │(Pydant│ │(Supabase │  │
-│  └──────────┘ └─────────────┘ └───────┘ └──────────┘  │
+│  ┌──────────┐ ┌─────────────┐ ┌───────┐ ┌──────────┐    │
+│  │ routes.py│ │controllers.p│ │models │ │database.p│    │
+│  │ (HTTP)   │ │ (negócio)   │ │(Pydant│ │(Supabase │    │
+│  └──────────┘ └─────────────┘ └───────┘ └──────────┘    │
 └─────────────────┬───────────────────────────────────────┘
                   │ supabase-py (REST / JWT)
                   ▼
 ┌─────────────────────────────────────────────────────────┐
 │  Supabase                                               │
-│  ┌──────────────┐ ┌─────────────┐ ┌─────────────────┐  │
-│  │  PostgreSQL  │ │ Auth (JWT)  │ │ Storage (files) │  │
-│  └──────────────┘ └─────────────┘ └─────────────────┘  │
+│  ┌──────────────┐ ┌─────────────┐ ┌─────────────────┐   │
+│  │  PostgreSQL  │ │ Auth (JWT)  │ │ Storage (files) │   │
+│  └──────────────┘ └─────────────┘ └─────────────────┘   │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -107,6 +107,7 @@ Plataforma B2B de agendamentos profissionais. Empresas gerenciam profissionais, 
 ### Cloud / Infraestrutura
 | Serviço | Uso |
 |---------|-----|
+| Render | Hospedagem do Backend (FastAPI) e Deploy Automático |
 | Supabase | PostgreSQL, Auth (JWT), Storage |
 | Gmail SMTP | E-mails transacionais |
 
