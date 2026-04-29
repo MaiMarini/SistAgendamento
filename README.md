@@ -52,7 +52,7 @@ Plataforma B2B de agendamentos profissionais. Empresas gerenciam profissionais, 
 │  SistAgendamentos/                                      │
 │  ┌──────────┐ ┌─────────────┐ ┌───────┐ ┌──────────┐    │
 │  │ routes.py│ │controllers.p│ │models │ │database.p│    │
-│  │ (HTTP)   │ │ (negócio)   │ │(Pydant│ │(Supabase │    │
+│  │ (HTTP)   │ │ (negócio)   │ │Pydant │ │Supabase  │    │
 │  └──────────┘ └─────────────┘ └───────┘ └──────────┘    │
 └─────────────────┬───────────────────────────────────────┘
                   │ supabase-py (REST / JWT)
