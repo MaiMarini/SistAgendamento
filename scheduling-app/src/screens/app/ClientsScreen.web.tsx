@@ -186,11 +186,11 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<string, { bg: string; text: string }> = {
-  scheduled:  { bg: '#e3f2fd', text: '#1565c0' },
-  confirmed:  { bg: '#e8f5e9', text: '#2e7d32' },
-  completed:  { bg: '#f3e5f5', text: '#6a1b9a' },
-  cancelled:  { bg: '#fce4e4', text: '#c0392b' },
-  no_show:    { bg: '#fff3e0', text: '#e65100' },
+  scheduled: { bg: '#e3f2fd', text: '#1565c0' },
+  confirmed: { bg: '#e8f5e9', text: '#2e7d32' },
+  completed: { bg: '#f3e5f5', text: '#6a1b9a' },
+  cancelled: { bg: '#fce4e4', text: '#c0392b' },
+  no_show: { bg: '#fff3e0', text: '#e65100' },
 };
 
 function formatDateTimePt(iso: string): string {
@@ -366,19 +366,19 @@ function AddressFields({ cep, street, neighborhood, city, state, number, complem
           </Field>
         </View>
         <View style={[modalStyles.fieldTwo, { paddingTop: 0 }]}>
-          <TF label="Logradouro" value={street} onChange={() => {}} disabled placeholder="Preenchido automaticamente" />
+          <TF label="Logradouro" value={street} onChange={() => { }} disabled placeholder="Preenchido automaticamente" />
         </View>
       </View>
 
       <View style={modalStyles.fieldRow}>
         <View style={modalStyles.fieldHalf}>
-          <TF label="Bairro" value={neighborhood} onChange={() => {}} disabled placeholder="Preenchido automaticamente" />
+          <TF label="Bairro" value={neighborhood} onChange={() => { }} disabled placeholder="Preenchido automaticamente" />
         </View>
         <View style={[{ flex: 1.2 }]}>
-          <TF label="Cidade" value={city} onChange={() => {}} disabled placeholder="Preenchido automaticamente" />
+          <TF label="Cidade" value={city} onChange={() => { }} disabled placeholder="Preenchido automaticamente" />
         </View>
         <View style={[{ flex: 0.5 }]}>
-          <TF label="UF" value={state} onChange={() => {}} disabled placeholder="–" />
+          <TF label="UF" value={state} onChange={() => { }} disabled placeholder="–" />
         </View>
       </View>
 
@@ -583,31 +583,31 @@ function TabDetails({ client, onSaved }: { client: Client; onSaved: (updated: Cl
       is_provisional: false,
     };
     if (!isMinor) {
-      if (form.cpf)           payload.cpf = form.cpf;
-      if (form.cep)           payload.cep = form.cep;
-      if (form.street)        payload.street = form.street;
-      if (form.neighborhood)  payload.neighborhood = form.neighborhood;
-      if (form.city)          payload.city = form.city;
-      if (form.state)         payload.state = form.state;
+      if (form.cpf) payload.cpf = form.cpf;
+      if (form.cep) payload.cep = form.cep;
+      if (form.street) payload.street = form.street;
+      if (form.neighborhood) payload.neighborhood = form.neighborhood;
+      if (form.city) payload.city = form.city;
+      if (form.state) payload.state = form.state;
       if (form.addressNumber) payload.address_number = form.addressNumber;
-      if (form.complement)    payload.complement = form.complement;
-      if (form.phone)         payload.phone = form.phone;
+      if (form.complement) payload.complement = form.complement;
+      if (form.phone) payload.phone = form.phone;
       payload.phone_is_whatsapp = form.phoneIsWhatsapp;
-      if (form.email)         payload.email = form.email;
+      if (form.email) payload.email = form.email;
     } else {
-      if (form.guardianName)         payload.guardian_name = form.guardianName.trim();
-      if (form.guardianBirthDate)    payload.guardian_birth_date = form.guardianBirthDate;
-      if (form.guardianCpf)          payload.guardian_cpf = form.guardianCpf;
-      if (form.guardianCep)          payload.guardian_cep = form.guardianCep;
-      if (form.guardianStreet)       payload.guardian_street = form.guardianStreet;
+      if (form.guardianName) payload.guardian_name = form.guardianName.trim();
+      if (form.guardianBirthDate) payload.guardian_birth_date = form.guardianBirthDate;
+      if (form.guardianCpf) payload.guardian_cpf = form.guardianCpf;
+      if (form.guardianCep) payload.guardian_cep = form.guardianCep;
+      if (form.guardianStreet) payload.guardian_street = form.guardianStreet;
       if (form.guardianNeighborhood) payload.guardian_neighborhood = form.guardianNeighborhood;
-      if (form.guardianCity)         payload.guardian_city = form.guardianCity;
-      if (form.guardianState)        payload.guardian_state = form.guardianState;
-      if (form.guardianNumber)       payload.guardian_number = form.guardianNumber;
-      if (form.guardianComplement)   payload.guardian_complement = form.guardianComplement;
-      if (form.guardianPhone)        payload.guardian_phone = form.guardianPhone;
+      if (form.guardianCity) payload.guardian_city = form.guardianCity;
+      if (form.guardianState) payload.guardian_state = form.guardianState;
+      if (form.guardianNumber) payload.guardian_number = form.guardianNumber;
+      if (form.guardianComplement) payload.guardian_complement = form.guardianComplement;
+      if (form.guardianPhone) payload.guardian_phone = form.guardianPhone;
       payload.guardian_phone_is_whatsapp = form.guardianPhoneIsWhatsapp;
-      if (form.guardianEmail)        payload.guardian_email = form.guardianEmail;
+      if (form.guardianEmail) payload.guardian_email = form.guardianEmail;
     }
     const res = await fetch(`${API_URL}/clients/${client.id}`, {
       method: 'PATCH',
@@ -631,7 +631,7 @@ function TabDetails({ client, onSaved }: { client: Client; onSaved: (updated: Cl
         </View>
         <View style={[{ flex: 1 }]}>
           <NativeDateInput
-            label="Data de Nascimento *"
+            label="Data de Nasc. *"
             value={form.birthDate}
             onChange={v => setForm({ ...form, birthDate: v })}
             max={today}
@@ -909,93 +909,93 @@ function TabNotes({ client }: { client: Client }) {
 
   return (
     <>
-    {confirmDialog}
-    <ScrollView showsVerticalScrollIndicator={false} style={detailStyles.tabContent}>
+      {confirmDialog}
+      <ScrollView showsVerticalScrollIndicator={false} style={detailStyles.tabContent}>
 
-      {/* ── Seção: Observações ── */}
-      <Text style={detailStyles.sectionDivider}>Observações</Text>
+        {/* ── Seção: Observações ── */}
+        <Text style={detailStyles.sectionDivider}>Observações</Text>
 
-      {/* Nova observação */}
-      <Text style={detailStyles.notesLabel}>Nova observação</Text>
-      <textarea
-        value={newText}
-        onChange={(e: any) => setNewText(e.target.value)}
-        placeholder="Registre alergias, procedimentos realizados, orientações passadas, observações gerais..."
-        style={{
-          width: '100%', boxSizing: 'border-box' as any,
-          minHeight: 100, padding: '12px 14px',
-          fontSize: 14, color: '#635857', lineHeight: '1.6',
-          border: '1px solid #efeae8', borderRadius: 10,
-          backgroundColor: '#fdfcfc', outline: 'none',
-          fontFamily: 'inherit', resize: 'vertical' as any,
-          marginBottom: 10,
-        }}
-      />
-      {/* Anexar arquivo à observação */}
-      <View style={detailStyles.attachRow}>
-        <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 } as any}>
-          <View style={detailStyles.attachBtn}>
-            <Text style={detailStyles.attachBtnText}>📎 Anexar arquivo</Text>
-          </View>
-          <input
-            ref={obsFileRef as any}
-            type="file"
-            accept="image/*,.pdf"
-            multiple
-            style={{ display: 'none' }}
-            onChange={(e: any) => {
-              const files = Array.from(e.target.files ?? []) as File[];
-              if (files.length) setPendingObsFiles(prev => [...prev, ...files]);
-              if (obsFileRef.current) obsFileRef.current.value = '';
-            }}
-          />
-        </label>
-      </View>
-      {pendingObsFiles.length > 0 && (
-        <View style={{ gap: 6, marginBottom: 8 }}>
-          {pendingObsFiles.map((f, i) => (
-            <View key={i} style={detailStyles.pendingFile}>
-              <Text style={detailStyles.pendingFileName} numberOfLines={1}>{f.name}</Text>
-              <TouchableOpacity onPress={() => setPendingObsFiles(prev => prev.filter((_, j) => j !== i))} activeOpacity={0.7}>
-                <Text style={detailStyles.pendingFileRemove}>×</Text>
-              </TouchableOpacity>
+        {/* Nova observação */}
+        <Text style={detailStyles.notesLabel}>Nova observação</Text>
+        <textarea
+          value={newText}
+          onChange={(e: any) => setNewText(e.target.value)}
+          placeholder="Registre alergias, procedimentos realizados, orientações passadas, observações gerais..."
+          style={{
+            width: '100%', boxSizing: 'border-box' as any,
+            minHeight: 100, padding: '12px 14px',
+            fontSize: 14, color: '#635857', lineHeight: '1.6',
+            border: '1px solid #efeae8', borderRadius: 10,
+            backgroundColor: '#fdfcfc', outline: 'none',
+            fontFamily: 'inherit', resize: 'vertical' as any,
+            marginBottom: 10,
+          }}
+        />
+        {/* Anexar arquivo à observação */}
+        <View style={detailStyles.attachRow}>
+          <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 } as any}>
+            <View style={detailStyles.attachBtn}>
+              <Text style={detailStyles.attachBtnText}>📎 Anexar arquivo</Text>
             </View>
-          ))}
+            <input
+              ref={obsFileRef as any}
+              type="file"
+              accept="image/*,.pdf"
+              multiple
+              style={{ display: 'none' }}
+              onChange={(e: any) => {
+                const files = Array.from(e.target.files ?? []) as File[];
+                if (files.length) setPendingObsFiles(prev => [...prev, ...files]);
+                if (obsFileRef.current) obsFileRef.current.value = '';
+              }}
+            />
+          </label>
         </View>
-      )}
-      <View style={detailStyles.saveRow}>
-        <TouchableOpacity
-          style={[detailStyles.btnSave, (!newText.trim() && pendingObsFiles.length === 0) && { opacity: 0.45 }]}
-          onPress={handleAdd}
-          disabled={submitting || (!newText.trim() && pendingObsFiles.length === 0)}
-          activeOpacity={0.85}
-        >
-          {submitting
-            ? <ActivityIndicator color="#fff" />
-            : <Text style={detailStyles.btnSaveText}>+ Adicionar</Text>}
-        </TouchableOpacity>
-      </View>
+        {pendingObsFiles.length > 0 && (
+          <View style={{ gap: 6, marginBottom: 8 }}>
+            {pendingObsFiles.map((f, i) => (
+              <View key={i} style={detailStyles.pendingFile}>
+                <Text style={detailStyles.pendingFileName} numberOfLines={1}>{f.name}</Text>
+                <TouchableOpacity onPress={() => setPendingObsFiles(prev => prev.filter((_, j) => j !== i))} activeOpacity={0.7}>
+                  <Text style={detailStyles.pendingFileRemove}>×</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
+        <View style={detailStyles.saveRow}>
+          <TouchableOpacity
+            style={[detailStyles.btnSave, (!newText.trim() && pendingObsFiles.length === 0) && { opacity: 0.45 }]}
+            onPress={handleAdd}
+            disabled={submitting || (!newText.trim() && pendingObsFiles.length === 0)}
+            activeOpacity={0.85}
+          >
+            {submitting
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={detailStyles.btnSaveText}>+ Adicionar</Text>}
+          </TouchableOpacity>
+        </View>
 
-      {/* Histórico de observações */}
-      {loadingObs ? (
-        <View style={{ paddingTop: 20, alignItems: 'center' }}>
-          <ActivityIndicator color="#8e7f7e" />
-        </View>
-      ) : observations.length === 0 ? (
-        <Text style={detailStyles.emptyHint}>Nenhuma observação registrada ainda.</Text>
-      ) : (
-        observations.map(obs => {
-          const isAppt = obs.source === 'appointment';
-          return (
-            <View key={obs.id + obs.source} style={detailStyles.obsCard}>
-              <View style={detailStyles.obsHeader}>
-                <View style={[detailStyles.obsBadge, isAppt ? detailStyles.obsBadgeAppt : detailStyles.obsBadgeManual]}>
-                  <Text style={[detailStyles.obsBadgeText, isAppt ? detailStyles.obsBadgeApptText : detailStyles.obsBadgeManualText]}>
-                    {isAppt ? `Agendamento${obs.source_label ? ` · ${obs.source_label}` : ''}` : 'Manual'}
-                  </Text>
-                </View>
-                <Text style={detailStyles.obsDate}>{formatDateTimePt(obs.created_at)}</Text>
-                <View style={{ flexDirection: 'row', gap: 4, marginLeft: 'auto' } as any}>
+        {/* Histórico de observações */}
+        {loadingObs ? (
+          <View style={{ paddingTop: 20, alignItems: 'center' }}>
+            <ActivityIndicator color="#8e7f7e" />
+          </View>
+        ) : observations.length === 0 ? (
+          <Text style={detailStyles.emptyHint}>Nenhuma observação registrada ainda.</Text>
+        ) : (
+          observations.map(obs => {
+            const isAppt = obs.source === 'appointment';
+            return (
+              <View key={obs.id + obs.source} style={detailStyles.obsCard}>
+                <View style={detailStyles.obsHeader}>
+                  <View style={[detailStyles.obsBadge, isAppt ? detailStyles.obsBadgeAppt : detailStyles.obsBadgeManual]}>
+                    <Text style={[detailStyles.obsBadgeText, isAppt ? detailStyles.obsBadgeApptText : detailStyles.obsBadgeManualText]}>
+                      {isAppt ? `Agendamento${obs.source_label ? ` · ${obs.source_label}` : ''}` : 'Manual'}
+                    </Text>
+                  </View>
+                  <Text style={detailStyles.obsDate}>{formatDateTimePt(obs.created_at)}</Text>
+                  <View style={{ flexDirection: 'row', gap: 4, marginLeft: 'auto' } as any}>
                     {editingObsId !== obs.id && (
                       <TouchableOpacity
                         onPress={() => { setEditingObsId(obs.id); setEditText(obs.content); }}
@@ -1014,75 +1014,75 @@ function TabNotes({ client }: { client: Client }) {
                       <Text style={detailStyles.obsDeleteText}>{deletingObsId === obs.id ? '...' : '×'}</Text>
                     </TouchableOpacity>
                   </View>
-              </View>
-              {editingObsId === obs.id ? (
-                <>
-                  <textarea
-                    value={editText}
-                    onChange={(e: any) => setEditText(e.target.value)}
-                    style={{
-                      width: '100%', boxSizing: 'border-box' as any,
-                      minHeight: 80, padding: '10px 12px', marginTop: 8,
-                      fontSize: 14, color: '#635857', lineHeight: '1.6',
-                      border: '1px solid #c9b8b7', borderRadius: 8,
-                      backgroundColor: '#fdfcfc', outline: 'none',
-                      fontFamily: 'inherit', resize: 'vertical' as any,
-                    }}
-                    autoFocus
-                  />
-                  <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-                    <TouchableOpacity
-                      style={[detailStyles.btnSave, { paddingVertical: 6, paddingHorizontal: 16 } as any, savingEditId === obs.id && { opacity: 0.6 }]}
-                      onPress={() => handleSaveEdit(obs)}
-                      disabled={savingEditId === obs.id}
-                      activeOpacity={0.85}
-                    >
-                      <Text style={detailStyles.btnSaveText}>{savingEditId === obs.id ? '...' : 'Salvar'}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[detailStyles.btnSave, { paddingVertical: 6, paddingHorizontal: 16, backgroundColor: '#f0ebe9' } as any]}
-                      onPress={() => setEditingObsId(null)}
-                      activeOpacity={0.85}
-                    >
-                      <Text style={[detailStyles.btnSaveText, { color: '#8e7f7e' }]}>Cancelar</Text>
-                    </TouchableOpacity>
-                  </View>
-                </>
-              ) : (
-                <Text style={detailStyles.obsContent}>{obs.content}</Text>
-              )}
-              {obs.documents && obs.documents.length > 0 && (
-                <View style={{ marginTop: 4 }}>
-                  {obs.documents.map(doc => (
-                    <TouchableOpacity
-                      key={doc.id}
-                      style={detailStyles.obsDocRow}
-                      activeOpacity={0.7}
-                      onPress={async () => {
-                        const token = await getToken();
-                        const res = await fetch(`${API_URL}/clients/${client.id}/documents/${doc.id}/url`, {
-                          headers: { Authorization: `Bearer ${token}` },
-                        });
-                        if (res.ok) {
-                          const { signed_url } = await res.json();
-                          (window as any).open(signed_url, '_blank');
-                        }
-                      }}
-                    >
-                      <Text>
-                        {doc.file_type?.startsWith('image/') ? '🖼️' : doc.file_type === 'application/pdf' ? '📄' : '📎'}
-                      </Text>
-                      <Text style={detailStyles.obsDocName} numberOfLines={1}>{doc.file_name}</Text>
-                      <Text style={detailStyles.obsDocOpen}>Abrir</Text>
-                    </TouchableOpacity>
-                  ))}
                 </View>
-              )}
-            </View>
-          );
-        })
-      )}
-    </ScrollView>
+                {editingObsId === obs.id ? (
+                  <>
+                    <textarea
+                      value={editText}
+                      onChange={(e: any) => setEditText(e.target.value)}
+                      style={{
+                        width: '100%', boxSizing: 'border-box' as any,
+                        minHeight: 80, padding: '10px 12px', marginTop: 8,
+                        fontSize: 14, color: '#635857', lineHeight: '1.6',
+                        border: '1px solid #c9b8b7', borderRadius: 8,
+                        backgroundColor: '#fdfcfc', outline: 'none',
+                        fontFamily: 'inherit', resize: 'vertical' as any,
+                      }}
+                      autoFocus
+                    />
+                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                      <TouchableOpacity
+                        style={[detailStyles.btnSave, { paddingVertical: 6, paddingHorizontal: 16 } as any, savingEditId === obs.id && { opacity: 0.6 }]}
+                        onPress={() => handleSaveEdit(obs)}
+                        disabled={savingEditId === obs.id}
+                        activeOpacity={0.85}
+                      >
+                        <Text style={detailStyles.btnSaveText}>{savingEditId === obs.id ? '...' : 'Salvar'}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[detailStyles.btnSave, { paddingVertical: 6, paddingHorizontal: 16, backgroundColor: '#f0ebe9' } as any]}
+                        onPress={() => setEditingObsId(null)}
+                        activeOpacity={0.85}
+                      >
+                        <Text style={[detailStyles.btnSaveText, { color: '#8e7f7e' }]}>Cancelar</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </>
+                ) : (
+                  <Text style={detailStyles.obsContent}>{obs.content}</Text>
+                )}
+                {obs.documents && obs.documents.length > 0 && (
+                  <View style={{ marginTop: 4 }}>
+                    {obs.documents.map(doc => (
+                      <TouchableOpacity
+                        key={doc.id}
+                        style={detailStyles.obsDocRow}
+                        activeOpacity={0.7}
+                        onPress={async () => {
+                          const token = await getToken();
+                          const res = await fetch(`${API_URL}/clients/${client.id}/documents/${doc.id}/url`, {
+                            headers: { Authorization: `Bearer ${token}` },
+                          });
+                          if (res.ok) {
+                            const { signed_url } = await res.json();
+                            (window as any).open(signed_url, '_blank');
+                          }
+                        }}
+                      >
+                        <Text>
+                          {doc.file_type?.startsWith('image/') ? '🖼️' : doc.file_type === 'application/pdf' ? '📄' : '📎'}
+                        </Text>
+                        <Text style={detailStyles.obsDocName} numberOfLines={1}>{doc.file_name}</Text>
+                        <Text style={detailStyles.obsDocOpen}>Abrir</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
+            );
+          })
+        )}
+      </ScrollView>
     </>
   );
 }
@@ -1281,31 +1281,31 @@ export default function ClientsScreen() {
       notification_channel: form.notificationsEnabled ? form.notificationChannel : null,
     };
     if (!isMinor) {
-      if (form.cpf)           payload.cpf = form.cpf;
-      if (form.cep)           payload.cep = form.cep;
-      if (form.street)        payload.street = form.street;
-      if (form.neighborhood)  payload.neighborhood = form.neighborhood;
-      if (form.city)          payload.city = form.city;
-      if (form.state)         payload.state = form.state;
+      if (form.cpf) payload.cpf = form.cpf;
+      if (form.cep) payload.cep = form.cep;
+      if (form.street) payload.street = form.street;
+      if (form.neighborhood) payload.neighborhood = form.neighborhood;
+      if (form.city) payload.city = form.city;
+      if (form.state) payload.state = form.state;
       if (form.addressNumber) payload.address_number = form.addressNumber;
-      if (form.complement)    payload.complement = form.complement;
-      if (form.phone)         payload.phone = form.phone;
+      if (form.complement) payload.complement = form.complement;
+      if (form.phone) payload.phone = form.phone;
       payload.phone_is_whatsapp = form.phoneIsWhatsapp;
-      if (form.email)         payload.email = form.email;
+      if (form.email) payload.email = form.email;
     } else {
-      if (form.guardianName)         payload.guardian_name = form.guardianName.trim();
-      if (form.guardianBirthDate)    payload.guardian_birth_date = form.guardianBirthDate;
-      if (form.guardianCpf)          payload.guardian_cpf = form.guardianCpf;
-      if (form.guardianCep)          payload.guardian_cep = form.guardianCep;
-      if (form.guardianStreet)       payload.guardian_street = form.guardianStreet;
+      if (form.guardianName) payload.guardian_name = form.guardianName.trim();
+      if (form.guardianBirthDate) payload.guardian_birth_date = form.guardianBirthDate;
+      if (form.guardianCpf) payload.guardian_cpf = form.guardianCpf;
+      if (form.guardianCep) payload.guardian_cep = form.guardianCep;
+      if (form.guardianStreet) payload.guardian_street = form.guardianStreet;
       if (form.guardianNeighborhood) payload.guardian_neighborhood = form.guardianNeighborhood;
-      if (form.guardianCity)         payload.guardian_city = form.guardianCity;
-      if (form.guardianState)        payload.guardian_state = form.guardianState;
-      if (form.guardianNumber)       payload.guardian_number = form.guardianNumber;
-      if (form.guardianComplement)   payload.guardian_complement = form.guardianComplement;
-      if (form.guardianPhone)        payload.guardian_phone = form.guardianPhone;
+      if (form.guardianCity) payload.guardian_city = form.guardianCity;
+      if (form.guardianState) payload.guardian_state = form.guardianState;
+      if (form.guardianNumber) payload.guardian_number = form.guardianNumber;
+      if (form.guardianComplement) payload.guardian_complement = form.guardianComplement;
+      if (form.guardianPhone) payload.guardian_phone = form.guardianPhone;
       payload.guardian_phone_is_whatsapp = form.guardianPhoneIsWhatsapp;
-      if (form.guardianEmail)        payload.guardian_email = form.guardianEmail;
+      if (form.guardianEmail) payload.guardian_email = form.guardianEmail;
     }
     const res = await fetch(`${API_URL}/clients/`, {
       method: 'POST',

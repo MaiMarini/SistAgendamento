@@ -18,7 +18,7 @@ interface Observation { id: string; content: string; source: string; source_labe
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const AVATAR_COLORS = ['#8e7f7e','#c4a882','#7e9e8c','#8e7fa8','#a87e7e','#7e8ea8','#a8a07e','#a87e9e'];
+const AVATAR_COLORS = ['#8e7f7e', '#c4a882', '#7e9e8c', '#8e7fa8', '#a87e7e', '#7e8ea8', '#a8a07e', '#a87e9e'];
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -33,15 +33,15 @@ function getAvatarColor(name: string): string {
 function maskPhone(v: string): string {
   const d = v.replace(/\D/g, '').slice(0, 11);
   if (d.length <= 2) return d.length ? `(${d}` : '';
-  if (d.length <= 7) return `(${d.slice(0,2)}) ${d.slice(2)}`;
-  return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
+  if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
 }
 function maskCPF(v: string): string {
   const d = v.replace(/\D/g, '').slice(0, 11);
   if (d.length <= 3) return d;
-  if (d.length <= 6) return `${d.slice(0,3)}.${d.slice(3)}`;
-  if (d.length <= 9) return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6)}`;
-  return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6,9)}-${d.slice(9)}`;
+  if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
+  if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
 }
 function fmtDate(iso: string): string {
   const [y, m, d] = iso.split('-');
@@ -101,7 +101,7 @@ export default function ClientsScreen() {
   const [newObs, setNewObs] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [addForm, setAddForm] = useState({ name:'', phone:'', email:'', cpf:'', birth_date:'', observations:'' });
+  const [addForm, setAddForm] = useState({ name: '', phone: '', email: '', cpf: '', birth_date: '', observations: '' });
   const [loadingDetail, setLoadingDetail] = useState(false);
 
   const fetchClients = useCallback(async () => {
@@ -146,12 +146,14 @@ export default function ClientsScreen() {
   const handleDeactivate = (client: Client) => {
     Alert.alert('Desativar cliente', `Deseja desativar "${client.name}"?`, [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Desativar', style: 'destructive', onPress: async () => {
-        const token = await getToken();
-        await fetch(`${API_URL}/clients/${client.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
-        setShowDetail(false);
-        fetchClients();
-      }},
+      {
+        text: 'Desativar', style: 'destructive', onPress: async () => {
+          const token = await getToken();
+          await fetch(`${API_URL}/clients/${client.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+          setShowDetail(false);
+          fetchClients();
+        }
+      },
     ]);
   };
 
@@ -173,7 +175,7 @@ export default function ClientsScreen() {
     setSubmitting(false);
     if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.detail || 'Erro ao cadastrar.'); return; }
     setShowAdd(false);
-    setAddForm({ name:'', phone:'', email:'', cpf:'', birth_date:'', observations:'' });
+    setAddForm({ name: '', phone: '', email: '', cpf: '', birth_date: '', observations: '' });
     fetchClients();
   };
 
@@ -268,7 +270,7 @@ export default function ClientsScreen() {
             <Field label="Telefone" value={addForm.phone} onChangeText={(v: string) => setAddForm(f => ({ ...f, phone: maskPhone(v) }))} placeholder="(00) 00000-0000" keyboardType="phone-pad" />
             <Field label="E-mail" value={addForm.email} onChangeText={(v: string) => setAddForm(f => ({ ...f, email: v.trim() }))} placeholder="email@exemplo.com" keyboardType="email-address" autoCapitalize="none" />
             <Field label="CPF" value={addForm.cpf} onChangeText={(v: string) => setAddForm(f => ({ ...f, cpf: maskCPF(v) }))} placeholder="000.000.000-00" keyboardType="numeric" />
-            <Field label="Data de nascimento (AAAA-MM-DD)" value={addForm.birth_date} onChangeText={(v: string) => setAddForm(f => ({ ...f, birth_date: v }))} placeholder="1990-01-15" keyboardType="numeric" />
+            <Field label="Data de nasc. (AAAA-MM-DD)" value={addForm.birth_date} onChangeText={(v: string) => setAddForm(f => ({ ...f, birth_date: v }))} placeholder="1990-01-15" keyboardType="numeric" />
             <Field label="Observações" value={addForm.observations} onChangeText={(v: string) => setAddForm(f => ({ ...f, observations: v }))} placeholder="Observações gerais..." multiline />
             {error ? <Text style={cl.errorText}>{error}</Text> : null}
             <TouchableOpacity style={cl.btnSave} onPress={handleAdd} disabled={submitting} activeOpacity={0.85}>
