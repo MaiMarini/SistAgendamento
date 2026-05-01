@@ -48,7 +48,7 @@ class ProcessReminders extends Command
 
                 $appt->update(['reminder_sent' => true]);
 
-                Mail::to($appt->client_email)->queue(
+                Mail::to($appt->client_email)->send(
                     new AppointmentReminderMail(
                         $appt->client_name,
                         $appt->starts_at->toISOString(),

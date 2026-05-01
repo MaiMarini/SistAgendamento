@@ -104,7 +104,7 @@ class ProfessionalController extends Controller
             . '/accept-invite?token=' . $inviteToken;
         $companyName = Company::find($companyId)?->name ?? '';
 
-        Mail::to($request->email)->queue(
+        Mail::to($request->email)->send(
             new ProfessionalInviteMail($request->name, $companyName, $inviteLink)
         );
 
@@ -261,7 +261,7 @@ class ProfessionalController extends Controller
             . '/accept-invite?token=' . $inviteToken;
         $companyName = Company::find(request()->user()->effectiveCompanyId())?->name ?? '';
 
-        Mail::to($profUser->email)->queue(
+        Mail::to($profUser->email)->send(
             new ProfessionalInviteMail($professional->name, $companyName, $inviteLink)
         );
 

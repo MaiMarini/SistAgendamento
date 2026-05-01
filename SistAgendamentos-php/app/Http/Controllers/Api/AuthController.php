@@ -134,8 +134,8 @@ class AuthController extends Controller
         // 4. Consumir licença
         $license->consume($user->id);
 
-        // 5. Email de confirmação (em fila se queue estiver configurada, senão síncrono)
-        Mail::to($user->email)->queue(new RegistrationConfirmationMail($company->name));
+        // 5. Email de confirmação
+        Mail::to($user->email)->send(new RegistrationConfirmationMail($company->name));
 
         // 6. Gerar token e retornar
         $token = $user->createToken('api')->plainTextToken;
@@ -175,7 +175,7 @@ class AuthController extends Controller
                 $resetLink = config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:8081'))
                     . '/reset-password?token=' . $token . '&email=' . urlencode($user->email);
 
-                Mail::to($user->email)->queue(new PasswordResetMail($resetLink));
+                Mail::to($user->email)->send(new PasswordResetMail($resetLink));
             }
         } catch (\Exception $e) {
             // Silenciar erros (mesma abordagem do Python)

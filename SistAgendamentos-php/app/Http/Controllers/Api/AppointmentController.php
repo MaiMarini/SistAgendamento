@@ -195,7 +195,7 @@ class AppointmentController extends Controller
                 $appt->update(['reminder_sent' => true]);
 
                 // Enfileirar email
-                Mail::to($appt->client_email)->queue(
+                Mail::to($appt->client_email)->send(
                     new AppointmentReminderMail(
                         $appt->client_name,
                         $appt->starts_at->toISOString(),
@@ -259,7 +259,7 @@ class AppointmentController extends Controller
         $professionalName = Professional::find($appointment->professional_id)?->name ?? '';
         $companyName = Company::find($companyId)?->name ?? '';
 
-        Mail::to($email)->queue(
+        Mail::to($email)->send(
             new AppointmentNotificationMail(
                 $appointment->client_name,
                 $appointment->starts_at->toISOString(),
