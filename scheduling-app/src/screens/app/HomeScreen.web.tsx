@@ -7,7 +7,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { supabase, getToken } from '../../lib/supabase';
+import { getToken, onAuthStateChange } from '../../lib/auth';
 import { API_URL } from '../../lib/config';
 import { styles, CALENDAR_CSS } from './HomeScreen.web.styles';
 import { naiveIso, fmtDate, patchAppointmentStatus } from '../../lib/appointmentUtils';
@@ -98,12 +98,12 @@ export default function HomeScreen() {
   const [pickYear, setPickYear] = useState(new Date().getFullYear());
   // Refetch sempre que a sessão mudar (login, logout+login, token refresh)
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.access_token) {
+    const unsubscribe = onAuthStateChange((_event, user) => {
+      if (user) {
         calendarRef.current?.getApi().refetchEvents();
       }
     });
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, []);
 
   // Refetch ao voltar para a tela

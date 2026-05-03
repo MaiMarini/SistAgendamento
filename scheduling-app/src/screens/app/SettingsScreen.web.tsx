@@ -9,7 +9,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { supabase, getToken } from '../../lib/supabase';
+import { getToken } from '../../lib/auth';
 import { maskPhone, maskCEP, maskCNPJ } from '../../lib/masks';
 import { DaySchedule, TimeBlockItem, BlockForm, DAYS_LABELS, DEFAULT_DAY, EMPTY_SCHEDULE, EMPTY_BLOCK, REMINDER_OPTIONS } from '../../lib/scheduleConstants';
 import { useResponsiveWeb } from '../../lib/useResponsiveWeb';

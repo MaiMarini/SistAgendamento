@@ -2,9 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Session } from '@supabase/supabase-js';
 
-import { supabase } from '../lib/supabase';
+import { restoreSession, onAuthStateChange, type AuthUser } from '../lib/auth';
 import { UserProvider } from '../lib/UserContext';
 import LoginScreen from '../screens/auth/LoginScreen';
 import SetPasswordScreen from '../screens/auth/SetPasswordScreen';
@@ -22,31 +21,25 @@ function getPasswordSetupType(): 'invite' | 'recovery' | null {
 }
 
 export default function Navigation() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [userType, setUserType] = useState<string | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [passwordSetupType, setPasswordSetupType] = useState<'invite' | 'recovery' | null>(getPasswordSetupType);
 
-  const loadSession = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    setSession(session);
-    setUserType(session?.user?.user_metadata?.user_type ?? 'company');
-    setLoading(false);
-  };
-
   useEffect(() => {
-    loadSession();
+    restoreSession().then((restored) => {
+      setUser(restored);
+      setLoading(false);
+    });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUserType(session?.user?.user_metadata?.user_type ?? 'company');
+    const unsubscribe = onAuthStateChange((_event, authUser) => {
+      setUser(authUser);
       const type = getPasswordSetupType();
       if (type) {
         setPasswordSetupType(type);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, []);
 
   if (loading) {
@@ -66,8 +59,8 @@ export default function Navigation() {
     <UserProvider>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {session ? (
-            userType === 'professional' ? (
+          {user ? (
+            user.user_type === 'professional' ? (
               <Stack.Screen name="App" component={ProfessionalNavigator} />
             ) : (
               <Stack.Screen name="App" component={CompanyNavigator} />

@@ -10,7 +10,7 @@ import { useDrawerNav } from '../../lib/useDrawerNav';
 import BookingModal from './BookingModal.web';
 import AppointmentDetailModal from './AppointmentDetailModal.web';
 import { patchAppointmentStatus, parseNaive } from '../../lib/appointmentUtils';
-import { getToken } from '../../lib/supabase';
+import { getToken } from '../../lib/auth';
 import { maskPhone, maskCPF, maskCEP } from '../../lib/masks';
 import { getInitials, getAvatarColor } from '../../lib/avatar';
 import { useConfirm } from '../../hooks/useConfirm';

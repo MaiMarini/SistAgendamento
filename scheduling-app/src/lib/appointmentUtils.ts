@@ -1,5 +1,5 @@
 import { cardStyles } from '../screens/app/AppointmentsScreen.web.styles';
-import { getToken } from './supabase';
+import { getToken } from './auth';
 import { API_URL } from './config';
 
 // ── Timezone helpers ───────────────────────────────────────────────────────────

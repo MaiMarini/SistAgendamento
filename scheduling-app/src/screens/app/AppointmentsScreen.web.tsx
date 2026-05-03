@@ -3,7 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { getToken } from '../../lib/supabase';
+import { getToken } from '../../lib/auth';
 import { parseNaive, formatDateTime, formatTime, STATUS_LABEL, getBadgeStyle, patchAppointmentStatus } from '../../lib/appointmentUtils';
 import { API_URL } from '../../lib/config';
 import { styles, cardStyles } from './AppointmentsScreen.web.styles';

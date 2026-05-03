@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { API_URL } from '../../lib/config';
-import { getToken, supabase } from '../../lib/supabase';
+import { getToken } from '../../lib/auth';
 import { useCurrentUser } from '../../lib/UserContext';
 import { getInitials, getAvatarColor } from '../../lib/avatar';
 import { maskPhone, maskCPF } from '../../lib/masks';
@@ -19,20 +19,18 @@ import { modalStyles, detailStyles } from './ClientsScreen.web.styles';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const SUPABASE_URL = 'https://curulmrchgqrufzvipoy.supabase.co';
-
 async function uploadPhoto(file: File): Promise<string | null> {
   const token = await getToken();
-  const ext = file.name.split('.').pop() ?? 'jpg';
-  const path = `${Date.now()}.${ext}`;
-  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/professionals/${path}`, {
+  const formData = new FormData();
+  formData.append('photo', file);
+  const res = await fetch(`${API_URL}/upload/professional-photo`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': file.type, 'x-upsert': 'true' },
-    body: file,
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
   });
   if (!res.ok) return null;
-  const { data } = supabase.storage.from('professionals').getPublicUrl(path);
-  return data.publicUrl;
+  const data = await res.json();
+  return data.url;
 }
 
 function fmtDt(dt: string): string {

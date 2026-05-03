@@ -8,7 +8,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { supabase } from '../../lib/supabase';
+import { getToken, signOut } from '../../lib/auth';
 import { API_URL } from '../../lib/config';
 
 interface Props {
@@ -29,25 +29,23 @@ export default function SetPasswordScreen({ onDone, mode = 'invite' }: Props) {
   useEffect(() => {
     let cancelled = false;
     const establishSession = async () => {
-      // detectSessionInUrl: false — need to parse hash manually
+      // Check for token in URL hash (invite/recovery link)
       if (typeof window !== 'undefined' && window.location.hash) {
         const params = new URLSearchParams(window.location.hash.substring(1));
-        const access_token = params.get('access_token');
-        const refresh_token = params.get('refresh_token');
-        if (access_token && refresh_token) {
-          const { data: { session } } = await supabase.auth.setSession({ access_token, refresh_token });
-          if (session && !cancelled) { setSessionReady(true); return; }
+        const token = params.get('access_token');
+        if (token && !cancelled) {
+          // Store the token from the URL for use in handleSubmit
+          (window as any).__setPasswordToken = token;
+          setSessionReady(true);
+          return;
         }
       }
-      // Fallback: session may already exist
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session && !cancelled) setSessionReady(true);
+      // Fallback: check if we already have a token
+      const token = await getToken();
+      if (token && !cancelled) setSessionReady(true);
     };
     establishSession();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session && !cancelled) setSessionReady(true);
-    });
-    return () => { cancelled = true; subscription.unsubscribe(); };
+    return () => { cancelled = true; };
   }, []);
 
   const handleSubmit = async (e?: any) => {
@@ -70,18 +68,26 @@ export default function SetPasswordScreen({ onDone, mode = 'invite' }: Props) {
       return;
     }
     setLoading(true);
-    const { error: updateError } = await supabase.auth.updateUser({ password });
-    setLoading(false);
-    if (updateError) {
-      setError(updateError.message || 'Erro ao definir senha. Tente novamente ou solicite um novo convite.');
-      return;
-    }
+    try {
+      // Use the token from the URL hash or the stored token
+      const token = (window as any).__setPasswordToken || await getToken();
+      const updateRes = await fetch(`${API_URL}/auth/set-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ password }),
+      });
+      setLoading(false);
+      if (!updateRes.ok) {
+        const data = await updateRes.json().catch(() => ({}));
+        setError(data.message || 'Erro ao definir senha. Tente novamente ou solicite um novo convite.');
+        return;
+      }
 
-    // Activate the professional account (only for invite flow)
-    if (mode === 'invite') {
-      const { data: { session: freshSession } } = await supabase.auth.refreshSession();
-      const token = freshSession?.access_token;
-      if (token) {
+      // Activate the professional account (only for invite flow)
+      if (mode === 'invite') {
         const activateRes = await fetch(`${API_URL}/professionals/me/activate`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
@@ -91,14 +97,19 @@ export default function SetPasswordScreen({ onDone, mode = 'invite' }: Props) {
           console.warn('Activate call returned', activateRes.status);
         }
       }
+    } catch {
+      setLoading(false);
+      setError('Erro ao definir senha. Tente novamente.');
+      return;
     }
 
     // Clear the URL hash so the invite token is gone
     if (typeof window !== 'undefined') {
+      delete (window as any).__setPasswordToken;
       window.history.replaceState(null, '', window.location.pathname);
     }
     setSuccess('Senha definida com sucesso! Redirecionando para o login...');
-    await supabase.auth.signOut();
+    await signOut();
     setTimeout(() => onDone(), 1500);
   };
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, Modal, TextInput, ActivityIndicator,
 } from 'react-native';
-import { getToken } from '../../lib/supabase';
+import { getToken } from '../../lib/auth';
 import { API_URL } from '../../lib/config';
 import { modalStyles } from './AppointmentsScreen.web.styles';
 

@@ -8,8 +8,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { supabase } from '../../lib/supabase';
-import { API_URL } from '../../lib/config';
+import { signIn, registerCompany, forgotPassword } from '../../lib/auth';
 import { styles } from './LoginScreen.web.styles';
 
 type Tab = 'login' | 'register';
@@ -105,12 +104,9 @@ export default function LoginScreen() {
     }
     setError(''); setSuccess('');
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: loginForm.email.trim(),
-      password: loginForm.password,
-    });
+    const { error: loginError } = await signIn(loginForm.email.trim(), loginForm.password);
     setLoading(false);
-    if (error) setError('E-mail ou senha incorretos.');
+    if (loginError) setError(loginError);
   };
 
   const handleRegister = async (e?: any) => {
@@ -142,36 +138,18 @@ export default function LoginScreen() {
     }
     setError(''); setSuccess('');
     setLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/companies/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          cnpj: cnpj.replace(/\D/g, ''),
-          phone: phone.replace(/\D/g, ''),
-          license_code: licenseCode,
-          email: email.trim(),
-          password,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.detail || 'Erro ao criar conta. Tente novamente.');
-        setLoading(false);
-        return;
-      }
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(), password,
-      });
-      if (signInError) {
-        setSuccess('Conta criada! Faça login para continuar.');
-        setActiveTab('login');
-      }
-    } catch {
-      setError('Erro de conexão. Verifique se o servidor está rodando.');
-    }
+    const { error: regError } = await registerCompany({
+      name,
+      cnpj: cnpj.replace(/\D/g, ''),
+      phone: phone.replace(/\D/g, ''),
+      license_code: licenseCode,
+      email: email.trim(),
+      password,
+    });
     setLoading(false);
+    if (regError) {
+      setError(regError);
+    }
   };
 
   const handleForgotPassword = async () => {
@@ -181,17 +159,13 @@ export default function LoginScreen() {
     }
     setError(''); setSuccess('');
     setLoading(true);
-    try {
-      await fetch(`${API_URL}/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: loginForm.email.trim() }),
-      });
-      setSuccess('E-mail enviado! Verifique sua caixa de entrada.');
-    } catch {
-      setError('Erro ao enviar e-mail de recuperação.');
-    }
+    const { error: fpError } = await forgotPassword(loginForm.email.trim());
     setLoading(false);
+    if (fpError) {
+      setError(fpError);
+    } else {
+      setSuccess('E-mail enviado! Verifique sua caixa de entrada.');
+    }
   };
 
   return (

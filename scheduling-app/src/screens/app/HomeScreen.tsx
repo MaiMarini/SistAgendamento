@@ -4,7 +4,7 @@ import {
   Modal, ScrollView, RefreshControl, ActivityIndicator, Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { getToken } from '../../lib/supabase';
+import { getToken } from '../../lib/auth';
 import { API_URL } from '../../lib/config';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

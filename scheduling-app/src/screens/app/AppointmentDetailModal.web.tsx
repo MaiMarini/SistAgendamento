@@ -5,7 +5,7 @@ import {
   getBadgeStyle, STATUS_LABEL, formatDateTime, formatTime,
   parseNaive, fmtDate, patchAppointmentTime,
 } from '../../lib/appointmentUtils';
-import { getToken } from '../../lib/supabase';
+import { getToken } from '../../lib/auth';
 import { API_URL } from '../../lib/config';
 import { CalendarDatePicker, SlotPicker } from './BookingModal.web';
 

@@ -11,7 +11,7 @@ import {
   Switch,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { getToken } from '../../lib/supabase';
+import { getToken } from '../../lib/auth';
 import { maskPhone, maskCEP, maskCNPJ } from '../../lib/masks';
 import {
   DaySchedule,

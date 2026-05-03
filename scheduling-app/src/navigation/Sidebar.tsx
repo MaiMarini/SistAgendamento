@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
-import { supabase, getToken } from '../lib/supabase';
+import { getToken, signOut, onAuthStateChange } from '../lib/auth';
 import { useCurrentUser } from '../lib/UserContext';
 import { API_URL } from '../lib/config';
 import { styles } from './Sidebar.styles';
@@ -66,25 +66,26 @@ export default function Sidebar({ navigation, state, menuItems, showLegend = tru
     };
 
     // Busca imediata se já existe sessão
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.access_token) fetchProfessionals(session.access_token);
+    getToken().then((token) => {
+      if (token) fetchProfessionals(token);
     });
 
     // Atualiza quando a sessão mudar (login, token refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.access_token) {
-        fetchProfessionals(session.access_token);
+    const unsubscribe = onAuthStateChange(async (_event, user) => {
+      if (user) {
+        const token = await getToken();
+        if (token) fetchProfessionals(token);
       } else {
         setProfessionals([]);
         setDisplayName('');
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, []);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await signOut();
   };
 
   return (

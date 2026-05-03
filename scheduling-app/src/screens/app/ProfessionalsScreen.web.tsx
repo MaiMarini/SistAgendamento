@@ -15,7 +15,7 @@ import { styles, cardStyles, modalStyles } from './ProfessionalsScreen.web.style
 import { useResponsiveWeb } from '../../lib/useResponsiveWeb';
 import { useDrawerNav } from '../../lib/useDrawerNav';
 import { useConfirm } from '../../hooks/useConfirm';
-import { getToken, supabase } from '../../lib/supabase';
+import { getToken } from '../../lib/auth';
 import { maskPhone, maskCPF } from '../../lib/masks';
 import { getInitials, getAvatarColor } from '../../lib/avatar';
 import { DaySchedule, TimeBlockItem, BlockForm, DAYS_LABELS, DEFAULT_DAY, EMPTY_SCHEDULE, EMPTY_BLOCK } from '../../lib/scheduleConstants';
@@ -85,30 +85,21 @@ function isValidCPF(cpf: string): boolean {
   return calc(d, 9) === parseInt(d[9]) && calc(d, 10) === parseInt(d[10]);
 }
 
-const SUPABASE_URL = 'https://curulmrchgqrufzvipoy.supabase.co';
-
 async function uploadPhoto(file: File): Promise<string | null> {
   const token = await getToken();
-  const ext = file.name.split('.').pop() ?? 'jpg';
-  const path = `${Date.now()}.${ext}`;
-
-  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/professionals/${path}`, {
+  const formData = new FormData();
+  formData.append('photo', file);
+  const res = await fetch(`${API_URL}/upload/professional-photo`, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': file.type,
-      'x-upsert': 'true',
-    },
-    body: file,
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
   });
-
   if (!res.ok) {
     console.error('Upload failed:', await res.text());
     return null;
   }
-
-  const { data } = supabase.storage.from('professionals').getPublicUrl(path);
-  return data.publicUrl;
+  const data = await res.json();
+  return data.url;
 }
 
 // ── Componente Card ──────────────────────────────────────────────────────────
@@ -406,17 +397,12 @@ export default function ProfessionalsScreen() {
 
   useFocusEffect(useCallback(() => { fetchProfessionals(); fetchSpecialties(); }, [fetchProfessionals, fetchSpecialties]));
 
-  // ── Realtime: atualiza status do profissional ao vivo ─��───────────────────
+  // ── Polling: atualiza lista de profissionais periodicamente ─────────────────
   useEffect(() => {
-    const channel = supabase
-      .channel('professional-status-watch')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'professional' }, (payload: any) => {
-        setProfessionals(prev =>
-          prev.map(p => p.id === payload.new.id ? { ...p, active: payload.new.active, status: payload.new.status } : p)
-        );
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    const interval = setInterval(() => {
+      fetchProfessionals();
+    }, 30000); // Refresh every 30 seconds
+    return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

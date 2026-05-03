@@ -11,8 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabase } from '../../lib/supabase';
-import { API_URL } from '../../lib/config';
+import { signIn, registerCompany, forgotPassword } from '../../lib/auth';
 import { styles } from './LoginScreen.styles';
 
 type Tab = 'login' | 'register';
@@ -54,10 +53,7 @@ export default function LoginScreen() {
     }
     setError('');
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: loginForm.email.trim(),
-      password: loginForm.password,
-    });
+    const { error } = await signIn(loginForm.email.trim(), loginForm.password);
     setLoading(false);
     if (error) setError('E-mail ou senha incorretos.');
   };
@@ -71,30 +67,17 @@ export default function LoginScreen() {
     setError('');
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/companies/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          cnpj,
-          phone,
-          license_code: licenseCode,
-          email: email.trim(),
-          password,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.detail || 'Erro ao criar conta. Tente novamente.');
-        setLoading(false);
-        return;
-      }
-      // Faz login após registro bem-sucedido
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const { error: regError } = await registerCompany({
+        name,
+        cnpj,
+        phone,
+        license_code: licenseCode,
         email: email.trim(),
         password,
       });
-      if (signInError) setError('Conta criada! Faça login para continuar.');
+      if (regError) {
+        setError(regError);
+      }
     } catch {
       setError('Erro de conexão. Verifique sua internet.');
     }
@@ -107,7 +90,7 @@ export default function LoginScreen() {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(loginForm.email.trim());
+    const { error } = await forgotPassword(loginForm.email.trim());
     setLoading(false);
     if (error) {
       setError('Erro ao enviar e-mail de recuperação.');

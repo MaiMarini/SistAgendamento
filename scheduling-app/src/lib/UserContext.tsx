@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { supabase, setCurrentToken } from './supabase';
+import { restoreSession, onAuthStateChange, type AuthUser } from './auth';
 
 export type UserType = 'company' | 'professional' | null;
 
@@ -15,34 +15,29 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [ctx, setCtx] = useState<UserCtx>({ userType: null, userId: null, companyId: null });
 
   useEffect(() => {
-    // Leitura inicial (sessão persistida)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setCurrentToken(session?.access_token ?? '');
-      if (!session?.user) return;
-      const meta = session.user.user_metadata ?? {};
-      setCtx({
-        userType: meta.user_type ?? 'company',
-        userId: session.user.id,
-        companyId: meta.company_id ?? null,
-      });
+    restoreSession().then((user) => {
+      if (user) {
+        setCtx({
+          userType: user.user_type,
+          userId: user.id,
+          companyId: user.company_id,
+        });
+      }
     });
 
-    // Listener: token e ctx atualizados diretamente do evento (sem chamar getSession)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setCurrentToken(session?.access_token ?? '');
-      if (!session?.user) {
+    const unsubscribe = onAuthStateChange((_event, user) => {
+      if (!user) {
         setCtx({ userType: null, userId: null, companyId: null });
         return;
       }
-      const meta = session.user.user_metadata ?? {};
       setCtx({
-        userType: meta.user_type ?? 'company',
-        userId: session.user.id,
-        companyId: meta.company_id ?? null,
+        userType: user.user_type,
+        userId: user.id,
+        companyId: user.company_id,
       });
     });
 
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, []);
 
   return <UserContext.Provider value={ctx}>{children}</UserContext.Provider>;
