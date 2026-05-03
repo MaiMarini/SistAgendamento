@@ -11,6 +11,17 @@ class UpdateClientRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $clean = [];
+        foreach (['cpf', 'phone', 'cep', 'guardian_cpf', 'guardian_phone', 'guardian_cep'] as $field) {
+            if ($this->has($field) && $this->$field) {
+                $clean[$field] = preg_replace('/\D/', '', $this->$field);
+            }
+        }
+        if ($clean) $this->merge($clean);
+    }
+
     public function rules(): array
     {
         return [

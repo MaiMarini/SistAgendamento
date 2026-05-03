@@ -11,6 +11,14 @@ class CreateProfessionalRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $clean = [];
+        if ($this->has('cpf')) $clean['cpf'] = preg_replace('/\D/', '', $this->cpf);
+        if ($this->has('phone')) $clean['phone'] = preg_replace('/\D/', '', $this->phone);
+        if ($clean) $this->merge($clean);
+    }
+
     public function rules(): array
     {
         return [

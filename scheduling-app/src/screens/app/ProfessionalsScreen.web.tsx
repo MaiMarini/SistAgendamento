@@ -560,8 +560,8 @@ export default function ProfessionalsScreen() {
       body: JSON.stringify({
         name: addForm.name,
         email: addForm.email.trim(),
-        cpf: addForm.cpf || undefined,
-        phone: addForm.phone || undefined,
+        cpf: addForm.cpf ? addForm.cpf.replace(/\D/g, '') : undefined,
+        phone: addForm.phone ? addForm.phone.replace(/\D/g, '') : undefined,
         specialty_ids: addForm.specialty_ids,
         photo_url: addForm.photo_url || undefined,
         color: addForm.color || undefined,
@@ -570,7 +570,7 @@ export default function ProfessionalsScreen() {
     });
     const data = await res.json();
     setSubmitting(false);
-    if (!res.ok) { setError(data.detail || 'Erro ao cadastrar profissional.'); return; }
+    if (!res.ok) { setError(data.message || 'Erro ao cadastrar profissional.'); return; }
     setShowAdd(false);
     setAddForm(EMPTY_ADD);
     fetchProfessionals();
@@ -596,8 +596,8 @@ export default function ProfessionalsScreen() {
       body: JSON.stringify({
         name: editForm.name,
         email: editForm.email || undefined,
-        cpf: editForm.cpf || undefined,
-        phone: editForm.phone || undefined,
+        cpf: editForm.cpf ? editForm.cpf.replace(/\D/g, '') : undefined,
+        phone: editForm.phone ? editForm.phone.replace(/\D/g, '') : undefined,
         specialty_ids: editForm.specialty_ids,
         photo_url: editForm.photo_url || undefined,
         color: editForm.color || undefined,
@@ -608,7 +608,7 @@ export default function ProfessionalsScreen() {
     });
     const data = await res.json();
     setSubmitting(false);
-    if (!res.ok) { setError(data.detail || 'Erro ao atualizar profissional.'); return; }
+    if (!res.ok) { setError(data.message || 'Erro ao atualizar profissional.'); return; }
     setShowEdit(false);
     setSelectedPro(null);
     fetchProfessionals();
