@@ -29,15 +29,24 @@ export default function SetPasswordScreen({ onDone, mode = 'invite' }: Props) {
   useEffect(() => {
     let cancelled = false;
     const establishSession = async () => {
-      // Check for token in URL hash (invite/recovery link)
-      if (typeof window !== 'undefined' && window.location.hash) {
-        const params = new URLSearchParams(window.location.hash.substring(1));
-        const token = params.get('access_token');
-        if (token && !cancelled) {
-          // Store the token from the URL for use in handleSubmit
-          (window as any).__setPasswordToken = token;
+      // Check for invite token in query string (?type=invite&token=...)
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const inviteToken = params.get('token');
+        if (inviteToken && !cancelled) {
+          (window as any).__inviteToken = inviteToken;
           setSessionReady(true);
           return;
+        }
+        // Check URL hash (legacy)
+        if (window.location.hash) {
+          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          const accessToken = hashParams.get('access_token');
+          if (accessToken && !cancelled) {
+            (window as any).__inviteToken = accessToken;
+            setSessionReady(true);
+            return;
+          }
         }
       }
       // Fallback: check if we already have a token
@@ -69,33 +78,41 @@ export default function SetPasswordScreen({ onDone, mode = 'invite' }: Props) {
     }
     setLoading(true);
     try {
-      // Use the token from the URL hash or the stored token
-      const token = (window as any).__setPasswordToken || await getToken();
-      const updateRes = await fetch(`${API_URL}/auth/set-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ password }),
-      });
-      setLoading(false);
-      if (!updateRes.ok) {
-        const data = await updateRes.json().catch(() => ({}));
-        setError(data.message || 'Erro ao definir senha. Tente novamente ou solicite um novo convite.');
-        return;
-      }
+      const inviteToken = (window as any).__inviteToken;
 
-      // Activate the professional account (only for invite flow)
-      if (mode === 'invite') {
-        const activateRes = await fetch(`${API_URL}/professionals/me/activate`, {
+      if (mode === 'invite' && inviteToken) {
+        // Aceitar convite: envia token + senha para o backend
+        const res = await fetch(`${API_URL}/auth/accept-invite`, {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ token: inviteToken, password }),
         });
-        if (!activateRes.ok && activateRes.status !== 404) {
-          // 404 = already active (no-op). Other errors are unexpected.
-          console.warn('Activate call returned', activateRes.status);
+        setLoading(false);
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setError(data.message || 'Erro ao definir senha. Token expirado ou inválido.');
+          return;
         }
+      } else if (mode === 'recovery') {
+        // Reset de senha: usa email + token da URL
+        const params = new URLSearchParams(window.location.search);
+        const resetToken = params.get('token') || '';
+        const email = params.get('email') || '';
+        const res = await fetch(`${API_URL}/auth/reset-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ token: resetToken, email, password, password_confirmation: password }),
+        });
+        setLoading(false);
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setError(data.message || 'Erro ao redefinir senha. Token expirado ou inválido.');
+          return;
+        }
+      } else {
+        setLoading(false);
+        setError('Token não encontrado. Solicite um novo convite.');
+        return;
       }
     } catch {
       setLoading(false);

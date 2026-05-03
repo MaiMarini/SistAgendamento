@@ -101,7 +101,7 @@ class ProfessionalController extends Controller
 
         // Enviar email de convite
         $inviteLink = env('FRONTEND_URL', 'http://localhost:8081')
-            . '/accept-invite?token=' . $inviteToken;
+            . '?type=invite&token=' . $inviteToken;
         $companyName = Company::find($companyId)?->name ?? '';
 
         Mail::to($request->email)->send(
@@ -258,7 +258,7 @@ class ProfessionalController extends Controller
         ]);
 
         $inviteLink = env('FRONTEND_URL', 'http://localhost:8081')
-            . '/accept-invite?token=' . $inviteToken;
+            . '?type=invite&token=' . $inviteToken;
         $companyName = Company::find(request()->user()->effectiveCompanyId())?->name ?? '';
 
         Mail::to($profUser->email)->send(
