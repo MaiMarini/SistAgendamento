@@ -57,6 +57,12 @@ bash deploy.sh
 > `deploy.config` é **gitignored** (nunca versiona o segredo); `deploy.sh` e
 > `deploy.config.example` são versionados.
 
+> 🪟 **Windows/PowerShell:** use `.\deploy.ps1` em vez de `bash deploy.sh`. No
+> Windows o `bash` costuma ser o WSL (sem Git Credential Manager, então o
+> `git push` falha) e o PowerShell 5.1 corrompe aspas de JSON passado a
+> executáveis nativos. O `deploy.ps1` contorna os dois (push via GCM + corpo
+> JSON por arquivo temporário).
+
 ### Mecanismo por baixo (disparo manual)
 
 ```bash
