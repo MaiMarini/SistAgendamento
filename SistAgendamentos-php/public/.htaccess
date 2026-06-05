@@ -13,10 +13,11 @@
     RewriteCond %{HTTP:x-xsrf-token} .
     RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
 
-    # Redirect Trailing Slashes If Not A Folder...
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_URI} (.+)/$
-    RewriteRule ^ %1 [L,R=301]
+    # NOTE: a regra padrão de "Redirect Trailing Slashes" foi REMOVIDA.
+    # Ela fazia 301 em URLs com barra final (ex.: /api/appointments/), o que
+    # quebra o preflight CORS (o navegador não segue redirect em preflight).
+    # O Laravel já casa rotas com/sem barra final (UriValidator faz rtrim),
+    # então o redirect é desnecessário para esta API.
 
     # Send Requests To Front Controller...
     RewriteCond %{REQUEST_FILENAME} !-d
