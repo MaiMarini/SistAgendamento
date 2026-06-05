@@ -1,8 +1,0 @@
-fastapi
-uvicorn
-supabase
-python-dotenv
-fastapi-mail
-pydantic[email]
-PyJWT
-python-multipart

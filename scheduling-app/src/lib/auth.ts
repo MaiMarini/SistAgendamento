@@ -2,10 +2,9 @@
  * auth.ts
  * -------
  * Módulo de autenticação para o backend Laravel/Sanctum.
- * Substitui o supabase.auth mantendo a mesma interface para o resto do app.
  *
  * O token Sanctum é armazenado em AsyncStorage e mantido em memória
- * para acesso rápido (mesmo padrão do supabase.ts anterior).
+ * para acesso rápido.
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';

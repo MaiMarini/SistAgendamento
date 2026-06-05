@@ -2,7 +2,7 @@
 
 Plataforma B2B de agendamentos profissionais. Empresas gerenciam profissionais, clientes e agendamentos; profissionais acessam sua agenda e disponibilidade.
 
-> **Migração de backend (2026):** o backend foi **reescrito de FastAPI + Supabase para Laravel 11 + MySQL** para hospedagem na HostGator (domínio `kallme.com.br`). O backend atual é o diretório [`SistAgendamentos-php/`](SistAgendamentos-php/). O backend Python legado ([`SistAgendamentos/`](SistAgendamentos/)) está em processo de aposentadoria e é mantido apenas para referência. O app React Native foi preservado, trocando apenas a camada de autenticação de Supabase Auth para Laravel Sanctum.
+> **Migração de backend (2026):** o backend foi **reescrito de FastAPI + Supabase para Laravel 11 + MySQL** para hospedagem na HostGator (domínio `kallme.com.br`). O backend atual é o diretório [`SistAgendamentos-php/`](SistAgendamentos-php/). O backend Python legado (FastAPI + Supabase) foi **removido do repositório** após a conclusão da migração — seu histórico permanece no git. O app React Native foi preservado, trocando apenas a camada de autenticação de Supabase Auth para Laravel Sanctum.
 
 ---
 
@@ -57,17 +57,17 @@ Plataforma B2B de agendamentos profissionais. Empresas gerenciam profissionais, 
 │  │ api.php  │ │ Controllers │ │ Models │ │ Services │   │
 │  │ (rotas)  │ │ (HTTP)      │ │Eloquent│ │(negócio) │   │
 │  └──────────┘ └─────────────┘ └────────┘ └──────────┘   │
-│  ┌──────────┐ ┌─────────────┐ ┌────────────────────┐    │
-│  │ Requests │ │ Mail        │ │ Sanctum (auth)     │    │
-│  │(validação)│ │(transacional)│ │ tokens             │    │
-│  └──────────┘ └─────────────┘ └────────────────────┘    │
+│  ┌────────────┐ ┌──────────────┐ ┌────────────────────┐ │
+│  │ Requests   │ │ Mail         │ │ Sanctum (auth)     │ │
+│  │(validação) │ │(transacional)│ │ tokens             │ │
+│  └────────────┘ └──────────────┘ └────────────────────┘ │
 └─────────────────┬───────────────────────────────────────┘
                   │ Eloquent ORM
                   ▼
 ┌─────────────────────────────────────────────────────────┐
 │  MySQL (HostGator)                                      │
 │  + filesystem local (storage/app) para documentos       │
-│  + filas/cache/sessão em tabelas do banco                │
+│  + filas/cache/sessão em tabelas do banco               │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -113,7 +113,7 @@ Plataforma B2B de agendamentos profissionais. Empresas gerenciam profissionais, 
 | FullCalendar | 6.1.x | Calendário (web) |
 | AsyncStorage | 2.x | Persistência local do token |
 
-> **Nota:** `@supabase/supabase-js` ainda consta no `package.json` por resíduo da migração, mas **não é mais utilizado** — a autenticação agora é feita inteiramente via Laravel Sanctum (ver [`src/lib/auth.ts`](scheduling-app/src/lib/auth.ts)).
+> **Nota:** `@supabase/supabase-js` foi **removido** do `package.json` na migração — a autenticação é feita inteiramente via Laravel Sanctum (ver [`src/lib/auth.ts`](scheduling-app/src/lib/auth.ts)).
 
 ### Cloud / Infraestrutura
 | Serviço | Uso |
@@ -146,8 +146,6 @@ SistAgendamentos-docs/
 │   ├── storage/app/client-documents/ # Documentos enviados
 │   ├── .env.example
 │   └── composer.json
-│
-├── SistAgendamentos/                # Backend legado (FastAPI) — referência
 │
 └── scheduling-app/                  # Frontend React Native / Expo
     ├── package.json

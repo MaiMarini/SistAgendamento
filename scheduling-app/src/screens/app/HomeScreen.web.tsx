@@ -146,7 +146,7 @@ export default function HomeScreen() {
       ]);
 
       if (!apptRes.ok || !proRes.ok) {
-        // Retry automatico em 2s (falha transitoria Supabase)
+        // Retry automatico em 2s (falha transitoria de rede)
         setTimeout(() => calendarRef.current?.getApi().refetchEvents(), 2000);
         successCallback([]);
         return;

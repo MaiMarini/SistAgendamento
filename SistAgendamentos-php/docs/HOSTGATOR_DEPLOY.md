@@ -19,8 +19,7 @@ com subdomínio api.kallme.com.br.
 │   ├── public/                               ← DOCUMENT ROOT do subdomínio
 │   ├── .env                                  ← config de produção (não versionado)
 │   └── vendor/
-├── scheduling-app/   (não servido)
-└── SistAgendamentos/ (Python legado, não servido)
+└── scheduling-app/   (não servido)
 ```
 
 - **Document Root** de `api.kallme.com.br` → `/home4/mairam62/sist-clean/SistAgendamentos-php/public`
