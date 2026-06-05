@@ -38,7 +38,27 @@ DEPLOY_BRANCH=master
 DEPLOY_REPO_PATH=/home4/mairam62/sist-clean    # raiz do .git (monorepo)
 ```
 
-**Deployar = um comando** (do seu PC ou de qualquer lugar):
+### Forma recomendada: `deploy.sh`
+
+Na **raiz do repositório** há um `deploy.sh` que faz `git push` + aciona o
+endpoint. Configuração local (uma vez só):
+
+```bash
+cp deploy.config.example deploy.config
+# edite deploy.config e preencha DEPLOY_SECRET (mesmo valor do .env do servidor)
+```
+
+O dia a dia passa a ser:
+
+```bash
+git commit -am "minha mudança"
+bash deploy.sh
+```
+
+> `deploy.config` é **gitignored** (nunca versiona o segredo); `deploy.sh` e
+> `deploy.config.example` são versionados.
+
+### Mecanismo por baixo (disparo manual)
 
 ```bash
 curl -s -X POST https://api.kallme.com.br/api/deploy \
@@ -57,7 +77,13 @@ Esperado: `{"ok":true,"log":[...]}`.
 Webhooks) com Payload URL `https://api.kallme.com.br/api/deploy?secret=SEU_SECRET`,
 content type `application/json`, evento apenas `push`.
 
-**Fluxo de trabalho:** editar → `git push` → `curl` (ou webhook) → no ar.
+### Autenticação do git (push)
+
+O remote usa **HTTPS sem token embutido**; o `push` autentica pelo **Git
+Credential Manager** (login no navegador na primeira vez). **Não** coloque
+tokens (`ghp_…`) na URL do remote — eles vazam no `.git/config` e em logs.
+
+**Fluxo de trabalho:** editar → `bash deploy.sh` (push + deploy) → no ar.
 
 ---
 

@@ -444,6 +444,8 @@ A API fica disponível em `http://localhost:8000/api`.
 
 > **Lembretes:** configure um cron job no cPanel para chamar `POST /api/companies/me/reminders/process` periodicamente (ver [Fluxos Principais](#fluxos-principais)).
 
+> **Deploy:** o backend em produção é atualizado com `bash deploy.sh` na raiz do repositório (faz `git push` + aciona `POST /api/deploy`, que roda `git pull` + `optimize:clear` no servidor). Detalhes, estrutura no servidor e configuração em [SistAgendamentos-php/docs/HOSTGATOR_DEPLOY.md](SistAgendamentos-php/docs/HOSTGATOR_DEPLOY.md).
+
 ### Frontend
 
 ```bash
