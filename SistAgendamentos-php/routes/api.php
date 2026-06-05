@@ -18,6 +18,51 @@ use Illuminate\Support\Facades\Route;
 Route::get('/health', fn () => response()->json(['status' => 'ok']));
 
 // =========================================================================
+// DEPLOY — webhook protegido por segredo (git pull + limpeza de cache)
+// Dispare com:
+//   curl -X POST https://api.kallme.com.br/api/deploy -H "X-Deploy-Secret: SEU_SEGREDO"
+// Ou ligue um webhook do GitHub (push) apontando para:
+//   https://api.kallme.com.br/api/deploy?secret=SEU_SEGREDO
+// =========================================================================
+Route::post('/deploy', function (\Illuminate\Http\Request $request) {
+    $secret   = config('deploy.secret');
+    $provided = $request->header('X-Deploy-Secret') ?: $request->input('secret');
+
+    // hash_equals em tempo constante; só prossegue se o segredo estiver configurado.
+    if (! $secret || ! is_string($provided) || ! hash_equals($secret, $provided)) {
+        return response()->json(['ok' => false, 'message' => 'Não autorizado.'], 403);
+    }
+
+    $repoPath = config('deploy.repo_path') ?: base_path();
+    $branch   = config('deploy.branch', 'master');
+    $php      = config('deploy.php_binary', 'php');
+
+    $log = [];
+    // Nenhum dado da request entra nos comandos — apenas valores fixos de config
+    // (escapados), evitando injeção de shell.
+    $run = function (string $cmd) use ($repoPath, &$log): int {
+        $log[] = '$ ' . $cmd;
+        $out   = [];
+        $code  = 0;
+        exec('cd ' . escapeshellarg($repoPath) . ' && ' . $cmd . ' 2>&1', $out, $code);
+        foreach ($out as $line) {
+            $log[] = $line;
+        }
+        return $code;
+    };
+
+    // 1. git pull (crítico — falha aborta o deploy)
+    if ($run('git pull origin ' . escapeshellarg($branch)) !== 0) {
+        return response()->json(['ok' => false, 'step' => 'git pull', 'log' => $log], 500);
+    }
+
+    // 2. limpar caches (best-effort — não derruba o deploy se o PHP CLI não resolver)
+    $run($php . ' artisan optimize:clear');
+
+    return response()->json(['ok' => true, 'log' => $log]);
+});
+
+// =========================================================================
 // AUTH — rotas públicas (sem autenticação)
 // =========================================================================
 Route::post('/auth/login',           [AuthController::class, 'login']);
