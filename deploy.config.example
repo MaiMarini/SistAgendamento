@@ -1,0 +1,6 @@
+# Copie este arquivo para "deploy.config" e preencha o segredo.
+#   cp deploy.config.example deploy.config
+#
+# DEPLOY_SECRET = mesmo valor de DEPLOY_SECRET no .env do servidor
+# (gere com: openssl rand -hex 32). deploy.config é gitignored.
+DEPLOY_SECRET=cole_o_segredo_aqui

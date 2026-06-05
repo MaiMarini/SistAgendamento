@@ -12,3 +12,6 @@ venv/
 
 # Patch scripts temporários
 patch_*.js
+
+# Segredo de deploy (deploy.sh) — nunca versionar
+deploy.config
