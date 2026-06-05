@@ -3,6 +3,64 @@
 Guia passo-a-passo para subir o backend Laravel no Plano M da HostGator
 com subdomínio api.kallme.com.br.
 
+---
+
+## ⚡ Estrutura atual no servidor (atualizado 2026-06)
+
+> Esta seção reflete como o ambiente **realmente está hoje**. As seções a partir
+> de "Pré-requisitos" são o guia de primeira instalação (referência histórica).
+
+**Layout no servidor (usuário cPanel `mairam62`):**
+
+```
+/home4/mairam62/sist-clean/                  ← clone do monorepo (o .git fica AQUI)
+├── .git/
+├── SistAgendamentos-php/                     ← app Laravel
+│   ├── public/                               ← DOCUMENT ROOT do subdomínio
+│   ├── .env                                  ← config de produção (não versionado)
+│   └── vendor/
+├── scheduling-app/   (não servido)
+└── SistAgendamentos/ (Python legado, não servido)
+```
+
+- **Document Root** de `api.kallme.com.br` → `/home4/mairam62/sist-clean/SistAgendamentos-php/public`
+- **Fonte da verdade** = o clone em `~/sist-clean`. Nada é copiado pra fora dele.
+- O antigo `~/api.kallme.com.br` (app duplicado na raiz + `.git` quebrado) foi removido.
+
+## 🚀 Deploy (fluxo atual)
+
+Endpoint protegido por segredo: `POST /api/deploy` (roda `git pull` +
+`php artisan optimize:clear`). Variáveis no `.env`:
+
+```env
+DEPLOY_SECRET=<segredo longo e aleatório>      # gere com: openssl rand -hex 32
+DEPLOY_BRANCH=master
+DEPLOY_REPO_PATH=/home4/mairam62/sist-clean    # raiz do .git (monorepo)
+```
+
+**Deployar = um comando** (do seu PC ou de qualquer lugar):
+
+```bash
+curl -s -X POST https://api.kallme.com.br/api/deploy \
+  -H "Content-Type: application/json" \
+  -d '{"secret":"SEU_SECRET"}'
+```
+
+Esperado: `{"ok":true,"log":[...]}`.
+
+> ⚠️ **ModSecurity:** o WAF da HostGator fica **ligado**. O formato acima passa.
+> **NÃO** use `-A "Mozilla/5.0"` nem `Accept: application/json` — esse formato é
+> bloqueado com "Not Acceptable / Mod_Security". Mande o segredo no **corpo JSON**
+> com o User-Agent padrão do curl.
+
+**Deploy automático (opcional):** webhook do GitHub (repositório → Settings →
+Webhooks) com Payload URL `https://api.kallme.com.br/api/deploy?secret=SEU_SECRET`,
+content type `application/json`, evento apenas `push`.
+
+**Fluxo de trabalho:** editar → `git push` → `curl` (ou webhook) → no ar.
+
+---
+
 ## Pré-requisitos
 
 - Domínio `kallme.com.br` apontando para a HostGator (DNS configurado)
