@@ -2,6 +2,8 @@
 
 Plataforma B2B de agendamentos profissionais. Empresas gerenciam profissionais, clientes e agendamentos; profissionais acessam sua agenda e disponibilidade.
 
+> **Migração de backend (2026):** o backend foi **reescrito de FastAPI + Supabase para Laravel 11 + MySQL** para hospedagem na HostGator (domínio `kallme.com.br`). O backend atual é o diretório [`SistAgendamentos-php/`](SistAgendamentos-php/). O backend Python legado ([`SistAgendamentos/`](SistAgendamentos/)) está em processo de aposentadoria e é mantido apenas para referência. O app React Native foi preservado, trocando apenas a camada de autenticação de Supabase Auth para Laravel Sanctum.
+
 ---
 
 ## Sumário
@@ -29,8 +31,9 @@ Plataforma B2B de agendamentos profissionais. Empresas gerenciam profissionais, 
 | **Nome** | SistAgendamentos |
 | **Tipo** | Plataforma B2B de agendamentos |
 | **Usuários** | Empresas (gestores) e Profissionais |
-| **Backend** | FastAPI + Supabase (PostgreSQL + Auth + Storage) |
+| **Backend** | Laravel 11 + Sanctum + MySQL |
 | **Frontend** | React Native + Expo (web e mobile) |
+| **Hospedagem** | HostGator (cPanel) — domínio `kallme.com.br` |
 
 ---
 
@@ -45,36 +48,42 @@ Plataforma B2B de agendamentos profissionais. Empresas gerenciam profissionais, 
 │  │  (5 telas)         │  │  (4 telas)                 │ │
 │  └────────────────────┘  └────────────────────────────┘ │
 └─────────────────┬───────────────────────────────────────┘
-                  │ HTTP (REST)
+                  │ HTTP (REST) + Bearer token (Sanctum)
                   ▼
 ┌─────────────────────────────────────────────────────────┐
-│  Backend (FastAPI)                                      │
-│  SistAgendamentos/                                      │
-│  ┌──────────┐ ┌─────────────┐ ┌───────┐ ┌──────────┐    │
-│  │ routes.py│ │controllers.p│ │models │ │database.p│    │
-│  │ (HTTP)   │ │ (negócio)   │ │Pydant │ │Supabase  │    │
-│  └──────────┘ └─────────────┘ └───────┘ └──────────┘    │
+│  Backend (Laravel 11)                                   │
+│  SistAgendamentos-php/                                  │
+│  ┌──────────┐ ┌─────────────┐ ┌────────┐ ┌──────────┐   │
+│  │ api.php  │ │ Controllers │ │ Models │ │ Services │   │
+│  │ (rotas)  │ │ (HTTP)      │ │Eloquent│ │(negócio) │   │
+│  └──────────┘ └─────────────┘ └────────┘ └──────────┘   │
+│  ┌──────────┐ ┌─────────────┐ ┌────────────────────┐    │
+│  │ Requests │ │ Mail        │ │ Sanctum (auth)     │    │
+│  │(validação)│ │(transacional)│ │ tokens             │    │
+│  └──────────┘ └─────────────┘ └────────────────────┘    │
 └─────────────────┬───────────────────────────────────────┘
-                  │ supabase-py (REST / JWT)
+                  │ Eloquent ORM
                   ▼
 ┌─────────────────────────────────────────────────────────┐
-│  Supabase                                               │
-│  ┌──────────────┐ ┌─────────────┐ ┌─────────────────┐   │
-│  │  PostgreSQL  │ │ Auth (JWT)  │ │ Storage (files) │   │
-│  └──────────────┘ └─────────────┘ └─────────────────┘   │
+│  MySQL (HostGator)                                      │
+│  + filesystem local (storage/app) para documentos       │
+│  + filas/cache/sessão em tabelas do banco                │
 └─────────────────────────────────────────────────────────┘
 ```
 
 ### Camadas do Backend
 
-| Arquivo | Responsabilidade |
+| Caminho | Responsabilidade |
 |---------|-----------------|
-| `main.py` | Entry point FastAPI, CORS, registro de routers |
-| `app/routes.py` | Definição dos endpoints HTTP (validação de entrada via Pydantic) |
-| `app/controllers.py` | Lógica de negócio, queries ao Supabase |
-| `app/models.py` | Schemas Pydantic (request/response) |
-| `app/database.py` | Clientes Supabase, validação JWT via JWKS |
-| `app/email.py` | Serviço de e-mail transacional (SMTP / Gmail) |
+| `routes/api.php` | Definição de todas as rotas da API (prefixo `/api`) |
+| `app/Http/Controllers/Api/` | Controllers HTTP (lógica de cada endpoint) |
+| `app/Http/Requests/` | Form Requests (validação de entrada) |
+| `app/Models/` | Models Eloquent (13 entidades, todas com `HasUuids`) |
+| `app/Services/AvailabilityService.php` | Cálculo de slots disponíveis e disponibilidade mensal |
+| `app/Mail/` | Mailables transacionais (enviados via fila) |
+| `app/Rules/Cnpj.php` | Regra de validação de CNPJ |
+| `config/` | Configuração (database, auth, mail, sanctum, cors, etc.) |
+| `database/migrations/` | Schema do banco (19 migrations) |
 
 ---
 
@@ -83,33 +92,35 @@ Plataforma B2B de agendamentos profissionais. Empresas gerenciam profissionais, 
 ### Backend
 | Tecnologia | Versão | Uso |
 |------------|--------|-----|
-| Python | 3.x | Linguagem |
-| FastAPI | 0.135+ | Framework HTTP |
-| Uvicorn | — | Servidor ASGI |
-| Supabase-py | — | Client PostgreSQL + Auth |
-| Pydantic | v2 | Validação de dados |
-| fastapi-mail | — | Envio de e-mails |
-| PyJWT | — | Validação de tokens JWT |
-| python-dotenv | — | Variáveis de ambiente |
+| PHP | ^8.2 | Linguagem |
+| Laravel | ^11.0 | Framework HTTP |
+| Laravel Sanctum | ^4.0 | Autenticação por token de API |
+| Laravel Tinker | ^2.9 | REPL / debug |
+| ramsey/uuid | ^4.7 | Geração de UUIDs |
+| MySQL | 5.7+/8.x | Banco de dados |
+| PHPUnit | ^11.0 | Testes |
+| Laravel Pint | ^1.13 | Code style |
 
 ### Frontend
 | Tecnologia | Versão | Uso |
 |------------|--------|-----|
 | React Native | 0.83.2 | Framework mobile |
 | Expo | 55.x | Build e dev tools |
+| React | 19.2 | Biblioteca de UI |
 | TypeScript | 5.9.x | Linguagem |
-| React Navigation | 7.x | Navegação |
-| NativeWind / Tailwind | 4.x | Estilos |
+| React Navigation | 7.x | Navegação (Drawer + Stack) |
+| NativeWind / Tailwind | 4.x / 3.4 | Estilos |
 | FullCalendar | 6.1.x | Calendário (web) |
-| Supabase JS | 2.98+ | Client auth/db |
-| AsyncStorage | 2.x | Persistência local |
+| AsyncStorage | 2.x | Persistência local do token |
+
+> **Nota:** `@supabase/supabase-js` ainda consta no `package.json` por resíduo da migração, mas **não é mais utilizado** — a autenticação agora é feita inteiramente via Laravel Sanctum (ver [`src/lib/auth.ts`](scheduling-app/src/lib/auth.ts)).
 
 ### Cloud / Infraestrutura
 | Serviço | Uso |
 |---------|-----|
-| Render | Hospedagem do Backend (FastAPI) e Deploy Automático |
-| Supabase | PostgreSQL, Auth (JWT), Storage |
-| Gmail SMTP | E-mails transacionais |
+| HostGator (cPanel) | Hospedagem do backend Laravel + MySQL |
+| SMTP HostGator | E-mails transacionais (`naoresponda@kallme.com.br`) |
+| Filesystem local | Armazenamento de documentos de clientes (`storage/app`) |
 
 ---
 
@@ -117,41 +128,50 @@ Plataforma B2B de agendamentos profissionais. Empresas gerenciam profissionais, 
 
 ```
 SistAgendamentos-docs/
-├── SistAgendamentos/                # Backend Python/FastAPI
-│   ├── main.py                      # Entry point
-│   ├── requirements.txt             # Dependências Python
-│   ├── .env                         # Variáveis de ambiente (não versionar)
-│   └── app/
-│       ├── __init__.py
-│       ├── models.py                # Schemas Pydantic
-│       ├── database.py              # Clientes Supabase + auth JWT
-│       ├── routes.py                # Definição de endpoints HTTP
-│       ├── controllers.py           # Lógica de negócio
-│       └── email.py                 # Templates e envio de e-mails
+├── SistAgendamentos-php/            # Backend atual — Laravel 11
+│   ├── app/
+│   │   ├── Http/
+│   │   │   ├── Controllers/Api/     # AuthController, CompanyController, etc.
+│   │   │   └── Requests/            # Form Requests (validação)
+│   │   ├── Models/                  # 13 models Eloquent
+│   │   ├── Mail/                    # 5 Mailables transacionais
+│   │   ├── Services/                # AvailabilityService
+│   │   └── Rules/                   # Cnpj
+│   ├── database/migrations/         # 19 migrations
+│   ├── routes/
+│   │   ├── api.php                  # Todas as rotas da API
+│   │   └── web.php                  # Download de documento (URL assinada)
+│   ├── resources/views/emails/      # Templates Blade dos e-mails
+│   ├── config/                      # Configuração Laravel
+│   ├── storage/app/client-documents/ # Documentos enviados
+│   ├── .env.example
+│   └── composer.json
+│
+├── SistAgendamentos/                # Backend legado (FastAPI) — referência
 │
 └── scheduling-app/                  # Frontend React Native / Expo
     ├── package.json
     ├── app.json                     # Config Expo
+    ├── tailwind.config.js
     └── src/
         ├── lib/
-        │   ├── config.ts            # API_URL
-        │   ├── supabase.ts          # Client Supabase + cache de token
-        │   ├── UserContext.tsx      # Context de autenticação global
+        │   ├── config.ts            # API_URL (https://api.kallme.com.br/api)
+        │   ├── auth.ts              # Auth via Laravel Sanctum (token Bearer)
+        │   ├── UserContext.tsx      # Context de papel do usuário
         │   ├── appointmentUtils.ts  # Utilitários de agendamento
         │   ├── scheduleConstants.ts # Constantes de agenda
-        │   ├── masks.ts             # Máscaras de input (CPF, telefone)
+        │   ├── masks.ts             # Máscaras de input (CPF, CNPJ, telefone, CEP)
         │   ├── avatar.ts            # Geração de avatares
         │   └── useResponsiveWeb.ts  # Hook de responsividade web (CSS injection)
         ├── hooks/
-        │   ├── useConfirm.tsx       # Dialog de confirmação
-        │   ├── useBookingModal.ts   # Estado do modal de agendamento
+        │   ├── useConfirm.tsx
+        │   ├── useBookingModal.ts
         │   └── useAppointmentDetailModal.ts
         ├── navigation/
         │   ├── index.tsx            # Roteador raiz (auth → app)
         │   ├── CompanyNavigator.tsx # Drawer da empresa (5 telas)
         │   ├── ProfessionalNavigator.tsx  # Drawer do profissional (4 telas)
-        │   ├── Sidebar.tsx          # Componente de menu lateral
-        │   └── Sidebar.styles.ts
+        │   └── Sidebar.tsx
         └── screens/
             ├── auth/
             │   ├── LoginScreen.tsx (.web.tsx)
@@ -175,173 +195,158 @@ SistAgendamentos-docs/
 
 ## Banco de Dados
 
+MySQL gerenciado via cPanel (HostGator). Todas as entidades de domínio usam **UUID** como chave primária (trait `HasUuids`). Cache, filas (`jobs`) e sessões também residem em tabelas do banco (não há Redis na HostGator).
+
+### Modelo de Autenticação (Laravel)
+
+A tabela `users` é o centro da autenticação. Empresas e profissionais são **perfis 1:1** cujo `id` é igual ao `id` do respectivo usuário:
+
+- **Empresa:** `users.id == companies.id`
+- **Profissional:** `professionals.id == users.id` e `users.company_id` aponta para a empresa
+
+O helper `User::effectiveCompanyId()` retorna o `company_id` correto independente do tipo de usuário.
+
 ### Tabelas
 
-#### `company`
+#### `users`
 | Coluna | Tipo | Descrição |
 |--------|------|-----------|
-| `id` | UUID PK | Gerado pelo Supabase Auth |
-| `name` | text | Nome da empresa |
-| `cnpj` | text | CNPJ (só dígitos) |
-| `phone` | text | Telefone |
-| `contact_email` | text | E-mail de contato |
-| `cep` | text | CEP |
-| `street` | text | Logradouro |
-| `address_number` | text | Número |
-| `complement` | text | Complemento |
-| `neighborhood` | text | Bairro |
-| `city` | text | Cidade |
-| `state` | text | Estado |
+| `id` | UUID PK | |
+| `email` | string unique | E-mail de login |
+| `password` | string | Hash da senha |
+| `user_type` | enum | `company` / `professional` |
+| `company_id` | UUID FK? | Empresa do usuário (preenchido para profissionais) |
+| `invite_token` | string(64) unique? | Token de convite de profissional |
+| `invite_token_expires_at` | timestamp? | Expiração do convite |
+
+> Tabelas auxiliares do Laravel: `personal_access_tokens` (Sanctum), `password_reset_tokens`, `sessions`, `cache`, `jobs`.
+
+#### `companies`
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| `id` | UUID PK | = `users.id` |
+| `name` | string | Nome da empresa |
+| `cnpj` | string(14) unique | CNPJ (só dígitos) |
+| `phone` | string | Telefone |
+| `contact_email` | string | E-mail de contato |
+| `cep` / `street` / `address_number` / `complement` / `neighborhood` / `city` / `state` | string | Endereço |
+| `reminder_hours_before` | int | Antecedência do lembrete (horas) |
 | `active` | boolean | Conta ativa |
-| `reminder_hours_before` | int | Horas de antecedência do lembrete |
-| `created_at` | timestamptz | |
+| `timestamps` | | |
 
-#### `professional`
+#### `professionals`
 | Coluna | Tipo | Descrição |
 |--------|------|-----------|
-| `id` | UUID PK | FK → `auth.users(id)` |
+| `id` | UUID PK | = `users.id` |
 | `company_id` | UUID FK | Empresa proprietária |
-| `name` | text | Nome completo |
-| `email` | text unique | E-mail de login |
-| `cpf` | text unique | CPF (só dígitos) |
-| `phone` | text | Telefone |
-| `photo_url` | text | URL da foto |
-| `color` | text | Cor no calendário (`#RRGGBB`) |
+| `name` | string | Nome completo |
+| `email` | string | E-mail (único por empresa) |
+| `cpf` | string(11)? | CPF (único por empresa, só dígitos) |
+| `phone` | string | Telefone |
+| `photo_url` | string | URL da foto |
+| `color` | string | Cor no calendário (`#RRGGBB`) |
+| `default_duration_minutes` | int | Duração padrão de atendimento (60) |
 | `active` | boolean | Profissional ativo |
-| `status` | text | `pending` / `active` / `inactive` / `deleted` |
-| `default_duration_minutes` | int | Duração padrão de atendimento |
-| `created_at` | timestamptz | |
+| `status` | enum | `pending` / `active` / `inactive` / `deleted` |
+| `timestamps` | | |
 
-#### `specialty`
+#### `specialties`
 | Coluna | Tipo | Descrição |
 |--------|------|-----------|
-| `id` | text PK | |
+| `id` | UUID PK | |
 | `company_id` | UUID FK | |
-| `name` | text | Nome da especialidade |
+| `name` | string | Nome da especialidade (único por empresa) |
 | `info` | text | Descrição adicional |
-| `created_at` | timestamptz | |
 
-#### `professional_specialty`
-| Coluna | Tipo | Descrição |
-|--------|------|-----------|
-| `professional_id` | UUID FK | |
-| `specialty_id` | text FK | |
+#### `professional_specialty` (pivot N:N)
+| Coluna | Tipo |
+|--------|------|
+| `professional_id` | UUID FK |
+| `specialty_id` | UUID FK |
 
-#### `service`
-| Coluna | Tipo | Descrição |
-|--------|------|-----------|
-| `id` | UUID PK | |
-| `company_id` | UUID FK | |
-| `name` | text | Nome do serviço |
-| `description` | text | Descrição |
-| `duration_minutes` | int | Duração |
-| `price` | numeric | Preço |
-| `active` | boolean | |
-| `created_at` | timestamptz | |
-
-#### `availability`
+#### `availabilities` / `company_availabilities`
+Disponibilidade semanal do profissional (e horário de funcionamento da empresa).
 | Coluna | Tipo | Descrição |
 |--------|------|-----------|
 | `id` | UUID PK | |
-| `professional_id` | UUID FK | |
+| `professional_id` / `company_id` | UUID FK | Dono da disponibilidade |
 | `day_of_week` | int | 0=Segunda … 6=Domingo |
-| `start_time` | time | Início do expediente |
-| `end_time` | time | Fim do expediente |
+| `start_time` / `end_time` | time | Início e fim do expediente |
 | `active` | boolean | |
 
-#### `company_availability`
-Mesma estrutura de `availability`, porém com `company_id` no lugar de `professional_id`. Define o horário de funcionamento da empresa.
-
-#### `time_block`
+#### `time_blocks` / `company_time_blocks`
+Bloqueios de agenda (do profissional e da empresa).
 | Coluna | Tipo | Descrição |
 |--------|------|-----------|
 | `id` | UUID PK | |
-| `professional_id` | UUID FK | |
+| `professional_id` / `company_id` | UUID FK | |
 | `is_recurring` | boolean | Bloqueio recorrente diário |
-| `starts_at` | timestamptz | Início (one-time) |
-| `ends_at` | timestamptz | Fim (one-time) |
-| `recurring_start_time` | time | Início (recorrente) |
-| `recurring_end_time` | time | Fim (recorrente) |
-| `reason` | text | Motivo |
-| `created_at` | timestamptz | |
+| `starts_at` / `ends_at` | timestamp | Período (one-time) |
+| `recurring_start_time` / `recurring_end_time` | time | Faixa diária (recorrente) |
+| `reason` | string | Motivo |
 
-#### `company_time_block`
-Mesma estrutura de `time_block`, mas com `company_id`. Define períodos de fechamento da empresa.
-
-#### `appointment`
+#### `clients`
 | Coluna | Tipo | Descrição |
 |--------|------|-----------|
 | `id` | UUID PK | |
 | `company_id` | UUID FK | |
-| `professional_id` | UUID FK | |
-| `service_id` | UUID FK? | Serviço (opcional) |
-| `client_id` | UUID FK? | Cliente cadastrado (opcional) |
-| `client_name` | text | Nome do cliente |
-| `client_email` | text | E-mail do cliente |
-| `client_phone` | text | Telefone do cliente |
-| `client_cpf` | text | CPF do cliente |
-| `starts_at` | timestamptz | Início |
-| `ends_at` | timestamptz | Fim (calculado) |
-| `status` | text | `scheduled` / `confirmed` / `completed` / `cancelled` / `no_show` |
-| `notes` | text | Observações |
-| `created_at` | timestamptz | |
-
-#### `client`
-| Coluna | Tipo | Descrição |
-|--------|------|-----------|
-| `id` | UUID PK | |
-| `company_id` | UUID FK | |
-| `name` | text | Nome |
+| `name` | string | Nome |
 | `birth_date` | date | Data de nascimento |
 | `is_minor` | boolean | Menor de idade |
-| `cpf` | text | CPF |
-| `cep` / `street` / ... | text | Endereço |
-| `phone` | text | Telefone |
-| `phone_is_whatsapp` | boolean | |
-| `email` | text | E-mail |
-| `guardian_*` | text | Dados do responsável (menores) |
+| `cpf` / `cep` / `street` / `neighborhood` / `city` / `state` / `address_number` / `complement` | string | Dados e endereço |
+| `phone` / `phone_is_whatsapp` / `email` | | Contato |
+| `guardian_*` | string | Dados do responsável (quando menor) |
 | `notifications_enabled` | boolean | Notificações ativas |
-| `notification_channel` | text | `email` / `whatsapp` |
+| `notification_channel` | enum | `email` / `whatsapp` |
 | `is_provisional` | boolean | Cliente provisório (criado no agendamento) |
-| `active` | boolean | |
-| `created_at` | timestamptz | |
+| `active` | boolean | Soft-delete |
 
-#### `client_document`
+> `Client::notificationEmail()` retorna `guardian_email` se `is_minor`, caso contrário `email`.
+
+#### `client_observations`
+Observações manuais sobre o cliente. (No frontend, são mescladas com as notas dos agendamentos.)
+| Coluna | Tipo |
+|--------|------|
+| `id` | UUID PK |
+| `client_id` / `company_id` | UUID FK |
+| `content` | text |
+
+#### `client_documents`
 | Coluna | Tipo | Descrição |
 |--------|------|-----------|
 | `id` | UUID PK | |
-| `client_id` | UUID FK | |
-| `company_id` | UUID FK | |
-| `file_name` | text | Nome original |
-| `file_type` | text | MIME type |
-| `storage_path` | text | Caminho no bucket Supabase Storage |
+| `client_id` / `company_id` | UUID FK | |
+| `observation_id` / `appointment_id` | UUID FK? | Vínculo opcional |
+| `file_name` | string | Nome original |
+| `file_type` | string | MIME type |
+| `storage_path` | string | Caminho em `storage/app/client-documents/...` |
 | `file_size_bytes` | int | |
-| `created_at` | timestamptz | |
 
-#### `client_observation`
+#### `appointments`
 | Coluna | Tipo | Descrição |
 |--------|------|-----------|
 | `id` | UUID PK | |
-| `client_id` | UUID FK | |
-| `company_id` | UUID FK | |
-| `content` | text | Texto da observação |
-| `source` | text | `manual` / `appointment` |
-| `source_label` | text | Nome do profissional (quando `source=appointment`) |
-| `created_at` | timestamptz | |
+| `company_id` / `professional_id` | UUID FK | |
+| `client_id` | UUID FK? | Cliente cadastrado (opcional) |
+| `service_id` | UUID? | Reservado (não há tabela `services` no schema atual) |
+| `client_name` / `client_email` / `client_phone` / `client_cpf` | string | Dados denormalizados do cliente |
+| `starts_at` / `ends_at` | timestamp | `ends_at` calculado a partir da duração |
+| `status` | enum | `scheduled` / `confirmed` / `completed` / `cancelled` / `no_show` |
+| `notes` | text | Observações |
+| `reminder_sent` | boolean | Flag de deduplicação de lembrete |
 
-#### `license`
+#### `licenses`
 | Coluna | Tipo | Descrição |
 |--------|------|-----------|
 | `id` | UUID PK | |
-| `code` | text unique | Código de licença |
+| `code` | string unique | Código de licença (validação case-insensitive) |
 | `used` | boolean | Se já foi utilizado |
-| `used_by` | UUID | ID da empresa que utilizou |
-| `used_at` | timestamptz | |
+| `used_by` | UUID? | Empresa que utilizou |
+| `used_at` | timestamp? | |
 
-### Storage
-| Bucket | Uso |
-|--------|-----|
-| `client-documents` | Documentos e arquivos dos clientes |
+### Armazenamento de Arquivos
+
+Documentos de clientes são gravados no **filesystem local** em `storage/app/client-documents/{company_id}/{client_id}/{uuid}.{ext}` (upload máximo de 10 MB). O download é feito por **URL assinada** com validade de 1 hora.
 
 ---
 
@@ -349,63 +354,95 @@ Mesma estrutura de `time_block`, mas com `company_id`. Define períodos de fecha
 
 ### Backend — `.env`
 
-Criar o arquivo `SistAgendamentos/.env`:
+Copie `SistAgendamentos-php/.env.example` para `.env` e ajuste:
 
 ```env
-# Supabase
-SUPABASE_URL=https://<project-ref>.supabase.co
-SUPABASE_KEY=<anon-key>
-SUPABASE_SERVICE_KEY=<service-role-key>
-SUPABASE_JWT_SECRET=<jwt-secret>
+APP_NAME="SistAgendamentos"
+APP_ENV=production
+APP_KEY=                      # gerar com: php artisan key:generate
+APP_DEBUG=false
+APP_URL=https://api.kallme.com.br
+APP_TIMEZONE=America/Sao_Paulo
+APP_LOCALE=pt_BR
 
-# E-mail (Gmail)
-MAIL_USERNAME=<seu-email>@gmail.com
-MAIL_PASSWORD=<app-password-gmail>
-MAIL_FROM=<seu-email>@gmail.com
-MAIL_FROM_NAME=Nome da Empresa
-MAIL_PORT=587
-MAIL_SERVER=smtp.gmail.com
+# URL do frontend — usada nos links de e-mail (reset, convite)
+FRONTEND_URL=https://app.kallme.com.br
 
-# Frontend
-FRONTEND_URL=http://localhost:8081
+# Expiração dos links (horas)
+INVITE_LINK_EXPIRATION_HOURS=24
+PASSWORD_RESET_EXPIRATION_HOURS=1
+
+# Banco de dados (MySQL — cPanel HostGator)
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=sistagendamentos
+DB_USERNAME=<usuario>
+DB_PASSWORD=<senha>
+
+# Cache / fila / sessão em banco (sem Redis na HostGator)
+CACHE_STORE=database
+QUEUE_CONNECTION=database
+SESSION_DRIVER=database
+
+# Sanctum — domínios autorizados
+SANCTUM_STATEFUL_DOMAINS=kallme.com.br,app.kallme.com.br,api.kallme.com.br
+
+# CORS — origens autorizadas a chamar a API
+CORS_ALLOWED_ORIGINS="https://app.kallme.com.br"
+
+# Email (SMTP HostGator — criar a conta no cPanel primeiro)
+MAIL_MAILER=smtp
+MAIL_HOST=mail.kallme.com.br
+MAIL_PORT=465
+MAIL_ENCRYPTION=ssl
+MAIL_USERNAME=naoresponda@kallme.com.br
+MAIL_PASSWORD=<senha do e-mail no cPanel>
+MAIL_FROM_ADDRESS="naoresponda@kallme.com.br"
+MAIL_FROM_NAME="Sistema de Agendamentos"
 ```
 
-> **Gmail App Password:** Acesse `myaccount.google.com → Segurança → Senhas de app` para gerar uma senha exclusiva para o aplicativo.
+> Em desenvolvimento local, use `MAIL_MAILER=log` (e-mails são gravados em `storage/logs/laravel.log`) ou um serviço como Mailtrap/MailHog.
 
 ### Frontend — `src/lib/config.ts`
 
 ```ts
-export const API_URL = 'http://localhost:8000';
+export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.kallme.com.br/api';
 ```
 
-Alterar para a URL de produção quando deployar o backend.
+Defina `EXPO_PUBLIC_API_URL` (ex.: `http://localhost:8000/api`) para apontar a um backend local.
 
 ---
 
 ## Rodando o Projeto
 
-### Backend
+### Backend (Laravel)
 
 ```bash
-cd SistAgendamentos
-
-# Criar e ativar ambiente virtual
-python -m venv venv
-source venv/bin/activate        # Linux/Mac
-venv\Scripts\activate           # Windows
+cd SistAgendamentos-php
 
 # Instalar dependências
-pip install -r requirements.txt
+composer install
 
-# Rodar em desenvolvimento (hot-reload)
-uvicorn main:app --reload
+# Configurar ambiente
+cp .env.example .env
+php artisan key:generate
 
-# Rodar em produção
-uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+# Rodar migrations (cria o schema no MySQL)
+php artisan migrate
+
+# Subir o servidor de desenvolvimento
+php artisan serve            # http://localhost:8000
+
+# Processar a fila (e-mails são enfileirados)
+php artisan queue:work
 ```
 
-A API estará disponível em `http://localhost:8000`.
-Documentação interativa: `http://localhost:8000/docs`
+A API fica disponível em `http://localhost:8000/api`.
+
+> **Filas:** os e-mails implementam `ShouldQueue` e são processados pela fila `database`. Em produção, configure um worker (`php artisan queue:work`) ou processe via cron com `php artisan queue:work --stop-when-empty`.
+
+> **Lembretes:** configure um cron job no cPanel para chamar `POST /api/companies/me/reminders/process` periodicamente (ver [Fluxos Principais](#fluxos-principais)).
 
 ### Frontend
 
@@ -416,138 +453,107 @@ cd scheduling-app
 npm install
 
 # Rodar (web)
-npx expo start --web
+npx expo start --web         # http://localhost:8081
 
-# Rodar (mobile - Android com emulador/dispositivo)
+# Rodar (mobile)
 npx expo run:android
-
-# Rodar (mobile - iOS, apenas macOS)
-npx expo run:ios
+npx expo run:ios             # apenas macOS
 ```
 
-O app web estará disponível em `http://localhost:8081`.
-
-> **Expo Go e SDK 55:** O Expo Go público não é compatível com Expo SDK 55. Para testar em dispositivo físico, use `expo run:android` / `expo run:ios` (gera um build de desenvolvimento) ou use o browser com `--web` e as DevTools do navegador para simular telas mobile.
+> **Expo Go e SDK 55:** o Expo Go público não é compatível com Expo SDK 55. Para dispositivo físico use `expo run:android` / `expo run:ios` (gera um build de desenvolvimento), ou rode `--web` e use as DevTools do navegador para simular telas mobile.
 
 ---
 
 ## API — Referência Completa
 
-Todas as rotas autenticadas exigem o header:
-```
-Authorization: Bearer <supabase-access-token>
-```
+Base: `/api`. Todas as rotas protegidas exigem o header:
 
----
+```
+Authorization: Bearer <token-sanctum>
+```
 
 ### Health Check
 
 | Método | Rota | Auth | Descrição |
 |--------|------|------|-----------|
-| GET | `/health` | ❌ | Verifica se a API está online |
-
-**Resposta:** `{ "status": "ok" }`
-
----
+| GET | `/health` | ❌ | Verifica se a API está online — `{ "status": "ok" }` |
 
 ### Autenticação — `/auth`
 
 | Método | Rota | Auth | Descrição |
 |--------|------|------|-----------|
-| POST | `/auth/forgot-password` | ❌ | Gera link de recuperação e envia e-mail customizado |
+| POST | `/auth/login` | ❌ | Login por e-mail/senha → retorna token + `user_type` + `company_id` |
+| POST | `/auth/forgot-password` | ❌ | Gera token de reset e envia e-mail (sempre 204) |
+| POST | `/auth/reset-password` | ❌ | Redefine senha via token (validade 1h) |
+| POST | `/auth/accept-invite` | ❌ | Profissional define senha e ativa conta via token de convite |
+| POST | `/auth/logout` | ✅ | Revoga o token atual |
+| GET | `/auth/me` | ✅ | Retorna o usuário autenticado + perfil (empresa ou profissional) |
+
+#### `POST /auth/login`
+```json
+{ "email": "contato@empresa.com", "password": "senha123" }
+```
+Verifica a senha e o status ativo, revoga tokens antigos (um token por usuário) e retorna um novo token.
 
 #### `POST /auth/forgot-password`
-
 ```json
 { "email": "contato@empresa.com" }
 ```
-
-**Fluxo interno:**
-1. Gera link de recuperação via `supabase_admin.auth.admin.generate_link(type=recovery)`
-2. Envia e-mail HTML customizado com o link (fastapi-mail)
-3. Sempre retorna `204 No Content`, mesmo que o e-mail não exista (evita enumeração)
-
-> O link redireciona para `FRONTEND_URL` (variável de ambiente, padrão `http://localhost:8081`), onde o app detecta `type=recovery` na URL e exibe a `SetPasswordScreen`.
-
----
+Gera token de reset (armazenado com hash em `password_reset_tokens`), envia e-mail e **sempre retorna 204** (evita enumeração de e-mails).
 
 ### Empresas — `/companies`
 
 | Método | Rota | Auth | Descrição |
 |--------|------|------|-----------|
-| POST | `/companies/register` | ❌ | Registra nova empresa |
+| POST | `/companies/register` | ❌ | Registra nova empresa (requer código de licença) |
 | GET | `/companies/me` | ✅ Empresa | Perfil da empresa autenticada |
 | PATCH | `/companies/me` | ✅ Empresa | Atualiza dados da empresa |
 | GET | `/companies/me/availability` | ✅ Empresa | Lista horários de funcionamento |
 | PUT | `/companies/me/availability` | ✅ Empresa | Substitui todos os horários de funcionamento |
 | GET | `/companies/me/time-blocks` | ✅ Empresa | Lista períodos de fechamento |
 | POST | `/companies/me/time-blocks` | ✅ Empresa | Cria período de fechamento |
-| DELETE | `/companies/me/time-blocks/{block_id}` | ✅ Empresa | Remove período de fechamento |
+| DELETE | `/companies/me/time-blocks/{blockId}` | ✅ Empresa | Remove período de fechamento |
 | POST | `/companies/me/reminders/process` | ✅ Empresa | Processa e envia lembretes pendentes (cron) |
 
 #### `POST /companies/register`
-
 ```json
 {
   "name": "Nome da Empresa",
   "cnpj": "12345678000190",
   "phone": "(67) 99999-9999",
-  "email": "contato@flordeliz.com",
+  "email": "contato@empresa.com",
   "password": "senha123",
   "license_code": "ABC-XYZ-123"
 }
 ```
-
-**Fluxo interno:**
-1. Valida o código de licença (deve existir e não ter sido usado)
-2. Cria usuário no Supabase Auth com `user_type=company`
-3. Insere perfil na tabela `company`
-4. Marca a licença como usada
-5. Envia e-mail de boas-vindas
-
-#### `PUT /companies/me/availability`
-
-```json
-{
-  "slots": [
-    { "day_of_week": 0, "start_time": "08:00", "end_time": "18:00" },
-    { "day_of_week": 1, "start_time": "08:00", "end_time": "18:00" }
-  ]
-}
-```
-
-Substitui todos os slots da empresa (0=Segunda … 6=Domingo).
-
----
+**Fluxo:** valida o código de licença → cria `user` (`user_type=company`) → cria perfil `company` (id = user.id) → marca a licença como usada → envia e-mail de boas-vindas → retorna token. Tudo em uma transação com rollback.
 
 ### Profissionais — `/professionals`
 
 | Método | Rota | Auth | Descrição |
 |--------|------|------|-----------|
-| POST | `/professionals/` | ✅ Empresa | Cria profissional e envia convite |
-| GET | `/professionals/` | ✅ Empresa | Lista profissionais da empresa |
-| GET | `/professionals/all-time-blocks` | ✅ Empresa | Lista bloqueios de todos os profissionais |
+| POST | `/professionals` | ✅ Empresa | Cria profissional e envia convite |
+| GET | `/professionals` | ✅ Empresa | Lista profissionais (não deletados) |
+| GET | `/professionals/all-time-blocks` | ✅ Empresa | Bloqueios de todos os profissionais |
 | GET | `/professionals/{id}` | ✅ | Busca profissional por ID |
-| PATCH | `/professionals/{id}` | ✅ Empresa | Atualiza dados do profissional |
-| DELETE | `/professionals/{id}` | ✅ Empresa | Exclui profissional (soft-delete) |
-| POST | `/professionals/{id}/resend-invite` | ✅ Empresa | Reenvia e-mail de convite |
-| POST | `/professionals/me/activate` | ✅ Profissional | Ativa própria conta após definir senha |
-| GET | `/professionals/me/availability` | ✅ Profissional | Busca própria disponibilidade |
+| PATCH | `/professionals/{id}` | ✅ Empresa | Atualiza profissional |
+| DELETE | `/professionals/{id}` | ✅ Empresa | Soft-delete (status=deleted) |
+| POST | `/professionals/{id}/resend-invite` | ✅ Empresa | Reenvia convite (só se `pending`) |
+| POST | `/professionals/me/activate` | ✅ Profissional | Ativa a própria conta (pending → active) |
+| GET | `/professionals/me/availability` | ✅ Profissional | Própria disponibilidade |
 | PUT | `/professionals/me/availability` | ✅ Profissional | Salva própria disponibilidade |
-| GET | `/professionals/me/time-blocks` | ✅ Profissional | Lista próprios bloqueios |
-| POST | `/professionals/me/time-blocks` | ✅ Profissional | Cria próprio bloqueio |
-| DELETE | `/professionals/me/time-blocks/{block_id}` | ✅ Profissional | Remove próprio bloqueio |
+| GET / POST / DELETE | `/professionals/me/time-blocks[/{blockId}]` | ✅ Profissional | Gerencia próprios bloqueios |
 | GET | `/professionals/{id}/availability` | ✅ Empresa | Disponibilidade de um profissional |
 | PUT | `/professionals/{id}/availability` | ✅ Empresa | Salva disponibilidade de um profissional |
-| GET | `/professionals/{id}/available-slots` | ✅ | Horários disponíveis em uma data |
-| GET | `/professionals/{id}/month-availability` | ✅ | Disponibilidade por dia no mês |
+| GET / POST / DELETE | `/professionals/{id}/time-blocks[/{blockId}]` | ✅ Empresa | Gerencia bloqueios de um profissional |
+| GET | `/professionals/{id}/available-slots?date=YYYY-MM-DD` | ✅ | Horários disponíveis em uma data |
+| GET | `/professionals/{id}/month-availability?year=&month=` | ✅ | Status de disponibilidade por dia do mês |
 
-#### `POST /professionals/`
-
+#### `POST /professionals`
 ```json
 {
   "name": "Ana Lima",
-  "email": "ana@flordeliz.com",
+  "email": "ana@empresa.com",
   "cpf": "123.456.789-00",
   "phone": "(67) 98888-8888",
   "specialty_ids": ["esp-uuid-1"],
@@ -555,93 +561,41 @@ Substitui todos os slots da empresa (0=Segunda … 6=Domingo).
   "default_duration_minutes": 60
 }
 ```
-
-**Fluxo interno:**
-1. `generate_link(type=invite)` → cria usuário Auth e gera link de convite
-2. `update_user_by_id` → garante `user_type=professional` e `company_id` no metadata
-3. Limpa registros deletados com o mesmo e-mail/CPF (reutilização)
-4. Insere perfil com `active=false, status=pending`
-5. Envia e-mail de convite com link para definição de senha
-
-#### `PATCH /professionals/{id}`
-
-```json
-{
-  "name": "Ana Lima",
-  "phone": "(67) 97777-7777",
-  "active": true,
-  "color": "#c4a882",
-  "default_duration_minutes": 45
-}
-```
-
-> Profissionais com `status=pending` não têm o campo `active` alterado via PATCH. Use o botão "Ativar conta" no frontend para ativar manualmente.
-
-#### `DELETE /professionals/{id}`
-
-Soft-delete: `status=deleted`, `active=false`.
-Libera o e-mail e CPF para reutilização (limpa os campos na tabela e substitui o e-mail no Auth).
+**Fluxo:** cria `user` + perfil `professional` (`status=pending`, `active=false`), gera `invite_token` (validade 24h), limpa eventuais registros deletados com o mesmo e-mail/CPF, e envia e-mail de convite.
 
 #### `GET /professionals/{id}/available-slots?date=YYYY-MM-DD`
-
-Retorna horários disponíveis para agendamento considerando:
-- Disponibilidade semanal configurada
-- Bloqueios (one-time e recorrentes)
-- Agendamentos existentes
-
+Calcula slots considerando disponibilidade semanal + bloqueios (one-time e recorrentes, do profissional **e** da empresa) + agendamentos existentes. Pula horários no passado se a data for hoje.
 **Resposta:** `["08:00", "08:30", "09:00", ...]`
 
 #### `GET /professionals/{id}/month-availability?year=YYYY&month=MM`
+**Resposta:** `{ "2026-06-01": "past", "2026-06-02": "available", "2026-06-03": "fully_booked", "2026-06-04": "day_off", ... }`
 
-**Resposta:** `{ "2025-03-01": true, "2025-03-02": false, ... }`
+### Clientes — `/clients`
 
----
+| Método | Rota | Auth | Descrição |
+|--------|------|------|-----------|
+| GET | `/clients?search=...` | ✅ | Busca por nome/CPF (limite 30) |
+| POST | `/clients` | ✅ | Cria cliente |
+| PATCH | `/clients/{id}` | ✅ | Atualiza cliente (sincroniza dados denormalizados nos agendamentos) |
+| DELETE | `/clients/{id}` | ✅ | Soft-delete (active=false) |
+| GET | `/clients/{id}/appointments` | ✅ | Histórico de agendamentos |
+| GET | `/clients/{id}/observations` | ✅ | Observações manuais + notas de agendamentos (mescladas) |
+| POST / PATCH / DELETE | `/clients/{id}/observations[/{obsId}]` | ✅ | Gerencia observações manuais |
+| GET | `/clients/{id}/documents` | ✅ | Lista documentos |
+| POST | `/clients/{id}/documents/upload` | ✅ | Upload de documento (máx. 10 MB) |
+| GET | `/clients/{id}/documents/{docId}/url` | ✅ | Gera URL assinada (validade 1h) |
+| DELETE | `/clients/{id}/documents/{docId}` | ✅ | Remove documento (arquivo + registro) |
 
 ### Agendamentos — `/appointments`
 
 | Método | Rota | Auth | Descrição |
 |--------|------|------|-----------|
-| GET | `/appointments/` | ✅ | Lista agendamentos (com filtros) |
-| POST | `/appointments/` | ✅ | Cria agendamento |
+| GET | `/appointments?date_from=&date_to=&status=` | ✅ | Lista agendamentos (auto-conclui vencidos) |
+| POST | `/appointments` | ✅ | Cria agendamento (`ends_at` calculado) |
 | PATCH | `/appointments/{id}` | ✅ | Atualiza status/horário/notas |
-| DELETE | `/appointments/{id}/notes` | ✅ | Limpa notas do agendamento |
+| DELETE | `/appointments/{id}/notes` | ✅ | Limpa as notas do agendamento |
 
-#### `GET /appointments/?date_from=...&date_to=...&status=...`
-
-Parâmetros opcionais:
-- `date_from` — data inicial (YYYY-MM-DD)
-- `date_to` — data final (YYYY-MM-DD)
-- `status` — filtro por status
-
-Profissionais só recebem seus próprios agendamentos. Empresas recebem todos.
-
-#### `POST /appointments/`
-
-```json
-{
-  "professional_id": "uuid",
-  "client_name": "Maria Silva",
-  "client_email": "maria@email.com",
-  "client_phone": "(67) 99999-0000",
-  "starts_at": "2025-03-20T10:00:00",
-  "duration_minutes": 60,
-  "notes": "Primeira consulta"
-}
-```
-
-`ends_at` é calculado automaticamente.
-Se o cliente tiver e-mail, um e-mail de confirmação é enviado automaticamente.
-
-#### `PATCH /appointments/{id}`
-
-```json
-{
-  "status": "confirmed",
-  "starts_at": "2025-03-20T11:00:00",
-  "duration_minutes": 45,
-  "notes": "Reagendado a pedido do cliente"
-}
-```
+> Profissionais recebem apenas os próprios agendamentos; empresas recebem todos. Ao listar, agendamentos `scheduled`/`confirmed` com `ends_at` no passado são automaticamente marcados como `completed`.
 
 **Ciclo de vida do status:**
 ```
@@ -650,35 +604,20 @@ scheduled → confirmed → completed
 any       → cancelled
 ```
 
----
-
-### Clientes — `/clients`
-
-| Método | Rota | Auth | Descrição |
-|--------|------|------|-----------|
-| GET | `/clients/?search=...` | ✅ | Lista clientes (busca por nome/CPF/telefone) |
-| POST | `/clients/` | ✅ | Cria cliente |
-| PATCH | `/clients/{id}` | ✅ | Atualiza cliente |
-| DELETE | `/clients/{id}` | ✅ | Desativa cliente (soft-delete) |
-| GET | `/clients/{id}/appointments` | ✅ | Histórico de agendamentos |
-| GET | `/clients/{id}/documents` | ✅ | Lista documentos |
-| POST | `/clients/{id}/documents/upload` | ✅ | Faz upload de documento |
-| GET | `/clients/{id}/documents/{doc_id}/url` | ✅ | Gera URL assinada para download |
-| DELETE | `/clients/{id}/documents/{doc_id}` | ✅ | Remove documento |
-| GET | `/clients/{id}/observations` | ✅ | Lista observações/histórico |
-| POST | `/clients/{id}/observations` | ✅ | Adiciona observação manual |
-| PATCH | `/clients/{id}/observations/{obs_id}` | ✅ | Edita observação |
-| DELETE | `/clients/{id}/observations/{obs_id}` | ✅ | Remove observação |
-
----
-
 ### Especialidades — `/specialties`
 
 | Método | Rota | Auth | Descrição |
 |--------|------|------|-----------|
-| GET | `/specialties/` | ✅ Empresa | Lista especialidades da empresa |
-| POST | `/specialties/` | ✅ Empresa | Cria especialidade |
+| GET | `/specialties` | ✅ Empresa | Lista especialidades da empresa |
+| POST | `/specialties` | ✅ Empresa | Cria especialidade |
 | DELETE | `/specialties/{id}` | ✅ Empresa | Remove especialidade |
+
+### Web (não-API)
+
+| Método | Rota | Auth | Descrição |
+|--------|------|------|-----------|
+| GET | `/` | ❌ | Status OK |
+| GET | `/documents/{docId}/download` | URL assinada | Download do arquivo do documento |
 
 ---
 
@@ -689,11 +628,11 @@ any       → cancelled
 ```
 App inicia
 │
-├── URL tem type=invite ou type=recovery?
+├── URL tem ?type=invite ou ?token=...&email=... (recovery)?
 │   └── SetPasswordScreen (definir/redefinir senha)
 │
-├── Usuário autenticado?
-│   ├── user_type = 'company'   → CompanyNavigator
+├── Token Sanctum válido no AsyncStorage?
+│   ├── user_type = 'company'      → CompanyNavigator
 │   └── user_type = 'professional' → ProfessionalNavigator
 │
 └── Não autenticado → LoginScreen
@@ -703,225 +642,159 @@ App inicia
 
 | Tela | Arquivos | Descrição |
 |------|----------|-----------|
-| Calendário | `HomeScreen.tsx` / `.web.tsx` | Calendário FullCalendar (web) ou lista (mobile) com agendamentos |
+| Calendário | `HomeScreen.tsx` / `.web.tsx` | Calendário FullCalendar (web) ou lista (mobile) de agendamentos |
 | Agendamentos | `AppointmentsScreen.tsx` / `.web.tsx` | Lista e gestão de agendamentos com filtros |
-| Profissionais | `ProfessionalsScreen.tsx` / `.web.tsx` | Cadastro, edição, convite e gestão de profissionais |
-| Clientes | `ClientsScreen.tsx` / `.web.tsx` | Cadastro, histórico, documentos e observações de clientes |
-| Configurações | `SettingsScreen.tsx` / `.web.tsx` | Empresa, especialidades e expediente (3 abas) |
+| Profissionais | `ProfessionalsScreen.tsx` / `.web.tsx` | Cadastro, edição, convite e agenda de profissionais |
+| Clientes | `ClientsScreen.tsx` / `.web.tsx` | Cadastro, histórico, documentos e observações |
+| Configurações | `SettingsScreen.tsx` / `.web.tsx` | Empresa, especialidades e expediente |
 
 ### ProfessionalNavigator (Profissional)
 
-| Tela | Rota | Descrição |
-|------|------|-----------|
-| Calendário | `Calendário` | Calendário pessoal |
-| Agendamentos | `Agendamentos` | Seus agendamentos |
-| Clientes | `Clientes` | Clientes atendidos |
-| Meu Perfil | `Meu Perfil` | Dados pessoais e disponibilidade |
-
-### Telas de Autenticação
-
 | Tela | Descrição |
 |------|-----------|
-| `LoginScreen` | Formulário de e-mail e senha |
-| `SetPasswordScreen` | Criação de senha via link de convite ou recuperação |
+| Calendário | Agenda pessoal |
+| Agendamentos | Próprios agendamentos |
+| Clientes | Clientes atendidos |
+| Meu Perfil | Dados pessoais, disponibilidade e bloqueios |
 
 ### Detalhe das Telas (Empresa)
 
-#### HomeScreen
-- **Web:** Calendário FullCalendar (mês/semana/dia), eventos coloridos por profissional, modal de detalhe ao clicar no evento, modal de novo agendamento ao clicar no dia.
-- **Mobile:** Lista dos agendamentos do dia com navegação por data.
-
-#### AppointmentsScreen
-- **Web e Mobile:** Lista de agendamentos com filtros por status, profissional e data. Permite alterar status, editar horário e ver/editar notas.
-
-#### ProfessionalsScreen
-- **Web:** Grid de cards por profissional, modal de criação/edição, modal de agenda (disponibilidade semanal + bloqueios), reenvio de convite.
-- **Mobile:** Lista de profissionais com ações equivalentes via telas dedicadas.
-
-#### ClientsScreen
-- **Web e Mobile:** Listagem com busca, painel lateral de detalhe (dados, histórico de agendamentos, documentos, observações). Suporte a menores de idade com dados de responsável. Upload de documentos via Supabase Storage.
-
-#### SettingsScreen (3 abas)
-- **Empresa:** Dados cadastrais com auto-preenchimento de endereço via ViaCEP.
-- **Especialidades:** Listagem e criação de especialidades vinculadas à empresa.
-- **Expediente:** Configuração de horários de atendimento por dia da semana e bloqueios de agenda da empresa.
+- **HomeScreen** — Web: FullCalendar (mês/semana/dia), eventos coloridos por profissional, modal de detalhe ao clicar no evento, modal de novo agendamento ao clicar no dia. Mobile: lista do dia com navegação por data.
+- **AppointmentsScreen** — Lista com filtros por status/data e busca por cliente; permite alterar status, editar horário e notas. Web inclui criação de agendamento.
+- **ProfessionalsScreen** — Web: grid de cards, modais de criação/edição e de agenda (disponibilidade semanal + bloqueios), reenvio de convite.
+- **ClientsScreen** — Listagem com busca, painel de detalhe (dados, histórico, documentos, observações). Suporte a menores com dados do responsável. Upload de documentos.
+- **SettingsScreen (3 abas)** — *Empresa* (cadastro com auto-preenchimento via ViaCEP), *Especialidades* e *Expediente* (horários por dia + bloqueios da empresa).
 
 ---
 
 ## Autenticação e Perfis de Usuário
 
 ### Tecnologia
-- **Supabase Auth** com JWT (RS256/ES256)
-- Token armazenado via `AsyncStorage` (mobile) / `localStorage` (web)
-- `detectSessionInUrl: false` — tokens de convite são processados manualmente
+- **Laravel Sanctum** — autenticação por token de API (Bearer).
+- Token armazenado no **AsyncStorage** (chave `@auth_token`) + cache em memória; dados do usuário em `@auth_user`. Ver [`src/lib/auth.ts`](scheduling-app/src/lib/auth.ts).
+- No login, tokens antigos do usuário são revogados (um token ativo por usuário).
 
-### Metadados do JWT
+### Resposta de Login
 ```json
 {
+  "token": "<plain-text-token>",
   "user_type": "company" | "professional",
   "company_id": "uuid-da-empresa"
 }
 ```
 
-### Dois Clientes Supabase
+`company_id` é resolvido no backend via `User::effectiveCompanyId()` (empresa: `user.id`; profissional: `user.company_id`).
 
-| Cliente | Chave | Uso |
-|---------|-------|-----|
-| `supabase` | `anon` | Respeita Row Level Security |
-| `supabase_admin` | `service_role` | Bypassa RLS (operações administrativas) |
-
-### Gerenciamento de Token no Frontend
-
-O `UserContext.tsx` mantém um cache em memória (`_currentToken`) atualizado diretamente via `onAuthStateChange`, evitando race conditions com AsyncStorage após login/logout.
-
-```
-supabase.auth.onAuthStateChange
-    └── setCurrentToken(token)   ← módulo supabase.ts
-    └── setCtx({ userType, userId, companyId })  ← UserContext.tsx
-```
+### Estado no Frontend
+`UserContext.tsx` mantém `userType`, `userId` e `companyId` em contexto global; `onAuthStateChange` notifica as telas após login/logout. O token é restaurado do AsyncStorage no boot do app.
 
 ---
 
 ## Fluxos Principais
 
 ### 1. Registro de Empresa
-
 ```
-1. Frontend → POST /companies/register
-2. Backend valida código de licença
-3. Supabase Auth: cria usuário com user_type=company
-4. Insere registro em company
-5. Marca licença como usada
-6. Envia e-mail de boas-vindas
-7. Retorna token de acesso
+1. Frontend → POST /companies/register (com license_code)
+2. Backend valida o código de licença (case-insensitive, não usado)
+3. Cria user (user_type=company) + perfil company (id = user.id)
+4. Marca a licença como usada
+5. Envia e-mail de boas-vindas (fila)
+6. Retorna token de acesso
 ```
 
 ### 2. Convite de Profissional
-
 ```
-1. Empresa → POST /professionals/
-2. Supabase Auth: generate_link(type=invite) → cria usuário + gera link
-3. update_user_by_id → garante user_type=professional no JWT
-4. Limpa registros deletados com mesmo e-mail/CPF
-5. Insere profissional com status=pending, active=false
-6. Envia e-mail com link de convite
+1. Empresa → POST /professionals
+2. Cria user + perfil professional (status=pending, active=false)
+3. Gera invite_token (validade 24h) e limpa registros deletados com mesmo e-mail/CPF
+4. Envia e-mail com link: FRONTEND_URL?type=invite&token=XXX
 
 --- Profissional clica no link ---
 
-7. App detecta type=invite na URL → exibe SetPasswordScreen
-8. SetPasswordScreen troca token de convite por sessão (setSession)
-9. Profissional define senha → supabase.auth.updateUser({ password })
-10. refreshSession() → obtém token fresco
-11. POST /professionals/me/activate → status=active, active=true
-12. signOut() → profissional redirigido para LoginScreen
+5. App detecta type=invite → exibe SetPasswordScreen
+6. POST /auth/accept-invite (token + nova senha)
+7. Backend define a senha, limpa o token e transiciona pending → active
+8. Retorna token → profissional já entra autenticado
 ```
 
 ### 3. Agendamento
-
 ```
-1. Empresa/Profissional → POST /appointments/
-2. Backend cria registro com ends_at calculado
-3. Se client_email informado → envia e-mail de confirmação (background)
-4. Retorna agendamento completo
+1. Empresa/Profissional → POST /appointments
+2. Backend calcula ends_at = starts_at + duration_minutes
+3. Denormaliza dados do cliente (de client_id ou dos campos enviados)
+4. Se o cliente tem notificações ativas → envia e-mail de confirmação (fila)
+5. Retorna o agendamento criado
 ```
 
-### 4. Lembrete Automático
-
+### 4. Lembrete Automático (cron)
 ```
-1. Cron job → POST /companies/me/reminders/process
-2. Backend busca agendamentos cujo starts_at está dentro do intervalo:
-   agora ≤ starts_at ≤ agora + reminder_hours_before
-3. Para cada agendamento com client_email, envia e-mail de lembrete
+1. Cron (cPanel) → POST /companies/me/reminders/process
+2. Para cada empresa com reminder_hours_before > 0:
+   - busca agendamentos scheduled em [agora + N h, agora + N h + 1 h] com reminder_sent=false
+   - marca reminder_sent=true (deduplicação)
+   - envia e-mail de lembrete (fila)
 ```
 
 ### 5. Deleção de Profissional
-
 ```
-1. Empresa → DELETE /professionals/{id}
-2. professional: status=deleted, active=false, email=placeholder, cpf=null
-3. Auth user: email substituído por placeholder (libera e-mail para reutilização)
-4. Histórico de agendamentos preservado (linha mantida no banco)
+1. Empresa → DELETE /professionals/{id} (bloqueado se houver agendamentos pendentes)
+2. status=deleted, active=false
+3. email → "deleted_{uuid}@placeholder.invalid", cpf → null (libera para reutilização)
+4. Histórico de agendamentos preservado
 ```
 
 ---
 
 ## Emails Transacionais
 
-Todos os e-mails são enviados como `BackgroundTask` do FastAPI (não bloqueiam a resposta HTTP).
+Todos os e-mails implementam `ShouldQueue` e são enviados de forma assíncrona via fila `database`. Templates em `resources/views/emails/`. Datas formatadas em pt-BR (ex.: "segunda-feira, 15 de junho de 2026 às 14:30"), timezone `America/Sao_Paulo`.
 
-| E-mail | Função | Gatilho | Destinatário |
-|--------|--------|---------|--------------|
-| Boas-vindas | `send_registration_confirmation` | `POST /companies/register` | Empresa |
-| Recuperação de senha | `send_password_reset` | `POST /auth/forgot-password` | Empresa/Profissional |
-| Convite de profissional | `send_professional_invite` | `POST /professionals/` e `/resend-invite` | Profissional |
-| Confirmação de agendamento | `send_appointment_notification` | `POST /appointments/` | Cliente |
-| Lembrete de agendamento | `send_appointment_reminder` | `POST /companies/me/reminders/process` | Cliente |
+| Mailable | Gatilho | Destinatário |
+|----------|---------|--------------|
+| `RegistrationConfirmationMail` | `POST /companies/register` | Empresa |
+| `PasswordResetMail` | `POST /auth/forgot-password` | Empresa/Profissional |
+| `ProfessionalInviteMail` | `POST /professionals` e `/resend-invite` | Profissional |
+| `AppointmentNotificationMail` | `POST /appointments` | Cliente |
+| `AppointmentReminderMail` | `POST /companies/me/reminders/process` | Cliente |
 
-### Identidade do Remetente
-
-- **Boas-vindas** e **Recuperação de senha**: remetente exibido como "Sistema de Agendamentos"
-- **Convite**, **Confirmação** e **Lembrete**: remetente exibido com o nome da empresa (`company_name` passado dinamicamente)
-
-### Configuração SMTP
-
-Utiliza Gmail com App Password. Para configurar:
-1. Acesse `myaccount.google.com → Segurança → Verificação em duas etapas` (deve estar ativo)
-2. Acesse `myaccount.google.com → Segurança → Senhas de app`
-3. Crie uma senha para o aplicativo
-4. Use essa senha no campo `MAIL_PASSWORD` do `.env`
+### Configuração SMTP (HostGator)
+1. No cPanel, crie a conta de e-mail (ex.: `naoresponda@kallme.com.br`).
+2. Configure `MAIL_*` no `.env` (host `mail.kallme.com.br`, porta 465, SSL).
+3. Garanta que um worker de fila esteja processando (`php artisan queue:work`).
 
 ---
 
 ## Decisões Arquiteturais
 
+### Migração FastAPI/Supabase → Laravel/MySQL
+Para hospedagem na HostGator (que oferece PHP + MySQL via cPanel, sem suporte conveniente a Python/Supabase), o backend foi reescrito em Laravel 11 preservando contratos de API, regras de negócio e estrutura de dados. O app React Native permaneceu praticamente intocado.
+
+### Perfis 1:1 com `users`
+Empresa e profissional são perfis cujo `id` coincide com o `id` do usuário. Isso simplifica joins e garante uma identidade única por login. `user_type` e `company_id` ficam na tabela `users`, evitando queries extras para descobrir o papel do usuário.
+
+### Autenticação por Token (Sanctum)
+Tokens de API (não cookies de sessão) atendem bem um cliente Expo (web + mobile). Um token ativo por usuário; o login revoga os anteriores.
+
 ### Soft-Delete
-Profissionais e clientes deletados têm `status=deleted` / `active=false`. Registros históricos (agendamentos, observações) são preservados. E-mail e CPF são limpos para permitir reutilização.
+Profissionais (`status=deleted`) e clientes (`active=false`) deletados preservam o histórico. E-mail e CPF de profissionais são limpos para permitir reutilização.
 
 ### Sistema de Licenças
-Empresas só podem se cadastrar com um código de licença válido e não utilizado. Impede registros não autorizados sem expor a plataforma publicamente.
+Empresas só se cadastram com um código de licença válido e não utilizado — impede registros não autorizados sem expor a plataforma publicamente.
 
-### Metadados no JWT
-`user_type` e `company_id` ficam no JWT, eliminando uma query ao banco a cada requisição para saber o tipo de usuário e sua empresa.
+### Cálculo de Slots no Backend (`AvailabilityService`)
+Horários disponíveis são calculados dinamicamente combinando: disponibilidade semanal, bloqueios one-time e recorrentes (do profissional e da empresa) e agendamentos existentes. `getMonthAvailability()` retorna o status de cada dia (`past`/`day_off`/`available`/`fully_booked`) em poucas queries para montar a grade do mês.
 
-### Cache de Token em Memória
-O frontend mantém o access token em uma variável de módulo (`_currentToken`), atualizada pelo `onAuthStateChange`. Isso evita race conditions com o AsyncStorage após logout/relogin em SPAs.
+### Auto-conclusão de Agendamentos
+Ao listar, agendamentos `scheduled`/`confirmed` cujo `ends_at` já passou são marcados como `completed` — sem necessidade de cron dedicado.
 
-### Dois Níveis de Acesso Supabase
-- **anon key** + RLS: garante que usuários só acessem dados da própria empresa
-- **service_role key**: usado pelo backend para operações administrativas que precisam contornar RLS (criação de usuários, gestão de licenças)
+### Filas, Cache e Sessão em Banco
+Como a HostGator não oferece Redis convenientemente, `QUEUE_CONNECTION`, `CACHE_STORE` e `SESSION_DRIVER` usam o driver `database`.
 
-### Cálculo de Slots Disponíveis
-Os horários disponíveis são calculados dinamicamente no backend combinando:
-1. Disponibilidade semanal do profissional
-2. Bloqueios one-time (férias, consultas)
-3. Bloqueios recorrentes (horário reservado diariamente)
-4. Agendamentos já existentes no dia
+### Documentos em Filesystem Local
+Arquivos de clientes são gravados em `storage/app` (não em storage de objetos). O acesso é feito por URL assinada com validade de 1 hora.
 
-### Retry em Conexões Supabase
-Queries críticas (especialmente `appointments`) usam loop de retry com `time.sleep(0.4)` para tolerar erros transientes de conexão via Cloudflare/PostgREST.
+### Plataforma Web (`.web.tsx`)
+O Metro bundler resolve `.web.tsx` para web. Telas com dependências exclusivas de web (FullCalendar, pickers) têm variantes separadas; arquivos `.tsx` sem sufixo são usados em iOS/Android.
 
-### E-mail de Recuperação de Senha Customizado
-O Supabase envia por padrão um e-mail genérico de recuperação. O projeto substitui esse fluxo: o frontend chama `POST /auth/forgot-password`, o backend gera o link via `supabase_admin` e envia um e-mail HTML próprio via fastapi-mail. O e-mail do Supabase para recuperação de senha deve estar desativado no painel Supabase (Auth → Email Templates).
-
-### `sceneStyle` no Drawer Navigator
-O React Navigation v7 usa `sceneStyle` (não `sceneContainerStyle`) para estilizar o container de cena no `DrawerNavigator`. Usar `sceneContainerStyle` gera erro de TypeScript.
-
-### Plataforma Web (.web.tsx)
-O Metro bundler resolve automaticamente arquivos `.web.tsx` para a plataforma web. Telas com comportamento ou dependências exclusivas de web (FullCalendar, pickers nativos) têm variantes separadas. Arquivos `.tsx` sem o sufixo são usados em iOS/Android.
-
-### Responsividade Web em Mobile
-A versão web é acessível em navegadores mobile. A adaptação de layout é feita via **CSS injection**: o hook `useResponsiveWeb` (em `src/lib/useResponsiveWeb.ts`) injeta uma tag `<style>` no `document.head` com regras `@media (max-width: 640px)` que atuam sobre atributos `data-*` nos elementos. Os componentes marcam elementos-chave com `dataSet` (prop do React Native Web que gera atributos `data-*` no HTML):
-
-| `dataSet` | Elemento | Efeito em mobile |
-|-----------|----------|-----------------|
-| `modal: 'true'` | Modais | Largura 92%, padding reduzido |
-| `twoCol: 'true'` | Layouts 2 colunas | Empilha em coluna única |
-| `proGrid: 'true'` | Grid de profissionais | Empilha em coluna única |
-| `proCard: 'true'` | Card de profissional | Largura 100% |
-| `topTitle: 'true'` | Título da home | Fonte menor (22px) |
-| `calWrapper: 'true'` | Wrapper do calendário | Padding reduzido |
-| `calCard: 'true'` | Card do calendário | Padding reduzido |
-| `filterRow: 'true'` | Linha de filtros | Quebra de linha (flex-wrap) |
-| `contentPad: 'true'` | Áreas de conteúdo | Padding lateral 16px |
-
-> Esta abordagem é necessária pois `StyleSheet.create` do React Native não suporta `@media` queries nativamente; a injeção direta de CSS é a solução compatível com React Native Web.
+### Responsividade Web via CSS Injection
+Como `StyleSheet.create` não suporta `@media`, o hook `useResponsiveWeb` injeta uma tag `<style>` no `document.head` com regras que atuam sobre atributos `data-*` (gerados via prop `dataSet` do React Native Web) para adaptar layout em telas pequenas.
