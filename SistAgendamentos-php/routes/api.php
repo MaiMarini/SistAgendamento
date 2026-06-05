@@ -33,18 +33,21 @@ Route::post('/deploy', function (\Illuminate\Http\Request $request) {
         return response()->json(['ok' => false, 'message' => 'Não autorizado.'], 403);
     }
 
-    $repoPath = config('deploy.repo_path') ?: base_path();
-    $branch   = config('deploy.branch', 'master');
-    $php      = config('deploy.php_binary', 'php');
+    // git roda na raiz do repositório (em monorepo, acima da pasta do Laravel);
+    // artisan roda sempre na raiz do Laravel (base_path).
+    $gitDir = config('deploy.repo_path') ?: base_path();
+    $appDir = base_path();
+    $branch = config('deploy.branch', 'master');
+    $php    = config('deploy.php_binary', 'php');
 
     $log = [];
-    // Nenhum dado da request entra nos comandos — apenas valores fixos de config
+    // Nenhum dado da request entra nos comandos — só valores fixos de config
     // (escapados), evitando injeção de shell.
-    $run = function (string $cmd) use ($repoPath, &$log): int {
-        $log[] = '$ ' . $cmd;
-        $out   = [];
-        $code  = 0;
-        exec('cd ' . escapeshellarg($repoPath) . ' && ' . $cmd . ' 2>&1', $out, $code);
+    $run = function (string $cmd, string $cwd) use (&$log): int {
+        $log[] = '$ (' . $cwd . ') ' . $cmd;
+        $out  = [];
+        $code = 0;
+        exec('cd ' . escapeshellarg($cwd) . ' && ' . $cmd . ' 2>&1', $out, $code);
         foreach ($out as $line) {
             $log[] = $line;
         }
@@ -52,12 +55,12 @@ Route::post('/deploy', function (\Illuminate\Http\Request $request) {
     };
 
     // 1. git pull (crítico — falha aborta o deploy)
-    if ($run('git pull origin ' . escapeshellarg($branch)) !== 0) {
+    if ($run('git pull origin ' . escapeshellarg($branch), $gitDir) !== 0) {
         return response()->json(['ok' => false, 'step' => 'git pull', 'log' => $log], 500);
     }
 
     // 2. limpar caches (best-effort — não derruba o deploy se o PHP CLI não resolver)
-    $run($php . ' artisan optimize:clear');
+    $run($php . ' artisan optimize:clear', $appDir);
 
     return response()->json(['ok' => true, 'log' => $log]);
 });
