@@ -287,20 +287,151 @@ function NativeSelect({ label, value, onChange, children }: {
 function NativeDateInput({ label, value, onChange, max }: {
   label: string; value: string; onChange: (v: string) => void; max?: string;
 }) {
+  const [open, setOpen] = useState(false);
+  const parsed = value ? new Date(value + 'T00:00:00') : null;
+  const [viewYear, setViewYear] = useState(parsed ? parsed.getFullYear() : new Date().getFullYear());
+  const [viewMonth, setViewMonth] = useState(parsed ? parsed.getMonth() : new Date().getMonth());
+  const [showYearSelect, setShowYearSelect] = useState(false);
+
+  const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const WEEKDAYS = ['D','S','T','Q','Q','S','S'];
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const maxDate = max ? new Date(max + 'T23:59:59') : null;
+
+  const displayText = parsed
+    ? `${pad(parsed.getDate())}/${pad(parsed.getMonth() + 1)}/${parsed.getFullYear()}`
+    : '';
+
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < firstDay; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  const selectDate = (day: number) => {
+    const val = `${viewYear}-${pad(viewMonth + 1)}-${pad(day)}`;
+    onChange(val);
+    setOpen(false);
+  };
+
+  const isSelected = (day: number) =>
+    parsed && parsed.getFullYear() === viewYear && parsed.getMonth() === viewMonth && parsed.getDate() === day;
+
+  const isDisabled = (day: number) => {
+    if (!maxDate) return false;
+    return new Date(viewYear, viewMonth, day) > maxDate;
+  };
+
+  const currentYear = new Date().getFullYear();
+  const years: number[] = [];
+  for (let y = currentYear; y >= currentYear - 120; y--) years.push(y);
+
+  const inputRef = React.useRef<any>(null);
+
   return (
     <Field label={label}>
-      <input
-        type="date"
-        value={value ?? ''}
-        onChange={(e: any) => onChange(e.target.value)}
-        max={max}
+      <TouchableOpacity
+        ref={inputRef}
+        onPress={() => { setOpen(!open); setShowYearSelect(false); }}
+        activeOpacity={0.8}
         style={{
-          border: '1px solid #efeae8', borderRadius: 9,
-          padding: '10px 12px', fontSize: 14, color: value ? '#635857' : '#c2b4b2',
-          backgroundColor: '#fdfcfc', outline: 'none',
-          width: '100%', boxSizing: 'border-box' as any, fontFamily: 'inherit',
+          borderWidth: 1, borderColor: '#efeae8', borderRadius: 9,
+          paddingHorizontal: 12, paddingVertical: 11, backgroundColor: '#fdfcfc',
+          flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         }}
-      />
+      >
+        <Text style={{ fontSize: 14, color: displayText ? '#635857' : '#c2b4b2' }}>
+          {displayText || 'Selecionar data'}
+        </Text>
+        <Text style={{ fontSize: 16, color: '#a08c8b' }}>&#x1F4C5;</Text>
+      </TouchableOpacity>
+
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <TouchableOpacity
+          onPress={() => setOpen(false)}
+          activeOpacity={1}
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.25)', justifyContent: 'center', alignItems: 'center' }}
+        >
+          <TouchableOpacity activeOpacity={1} onPress={() => {}}>
+            <View style={{
+              backgroundColor: '#fff', borderRadius: 14,
+              padding: 20, width: 310,
+              shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.18, shadowRadius: 24,
+            }}>
+              {/* Header: mês/ano selects + setas */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 6 }}>
+                <TouchableOpacity onPress={() => { if (viewMonth === 0) { setViewMonth(11); setViewYear(viewYear - 1); } else setViewMonth(viewMonth - 1); }}>
+                  <Text style={{ fontSize: 18, color: '#8e7f7e', paddingHorizontal: 4 }}>&#x25C0;</Text>
+                </TouchableOpacity>
+                <View style={{ flex: 1 }}>
+                  <select
+                    value={viewMonth}
+                    onChange={(e: any) => { setViewMonth(Number(e.target.value)); }}
+                    style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #efeae8', fontSize: 13, color: '#635857', backgroundColor: '#fdfcfc' }}
+                  >
+                    {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                  </select>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <select
+                    value={viewYear}
+                    onChange={(e: any) => { setViewYear(Number(e.target.value)); }}
+                    style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #efeae8', fontSize: 13, color: '#635857', backgroundColor: '#fdfcfc' }}
+                  >
+                    {years.map(y => <option key={y} value={y}>{y}</option>)}
+                  </select>
+                </View>
+                <TouchableOpacity onPress={() => { if (viewMonth === 11) { setViewMonth(0); setViewYear(viewYear + 1); } else setViewMonth(viewMonth + 1); }}>
+                  <Text style={{ fontSize: 18, color: '#8e7f7e', paddingHorizontal: 4 }}>&#x25B6;</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Weekday headers */}
+              <View style={{ flexDirection: 'row' }}>
+                {WEEKDAYS.map((d, i) => (
+                  <View key={i} style={{ flex: 1, alignItems: 'center', paddingVertical: 4 }}>
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: '#a08c8b' }}>{d}</Text>
+                  </View>
+                ))}
+              </View>
+
+              {/* Day grid */}
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                {cells.map((day, i) => (
+                  <TouchableOpacity
+                    key={i}
+                    disabled={!day || isDisabled(day)}
+                    onPress={() => day && selectDate(day)}
+                    activeOpacity={0.7}
+                    style={{ width: '14.28%' as any, alignItems: 'center', paddingVertical: 6 }}
+                  >
+                    {day ? (
+                      <View style={{
+                        width: 32, height: 32, borderRadius: 16,
+                        alignItems: 'center', justifyContent: 'center',
+                        backgroundColor: isSelected(day) ? '#8e7f7e' : 'transparent',
+                      }}>
+                        <Text style={{
+                          fontSize: 13,
+                          color: isDisabled(day) ? '#ddd' : isSelected(day) ? '#fff' : '#635857',
+                          fontWeight: isSelected(day) ? '700' : '400',
+                        }}>{day}</Text>
+                      </View>
+                    ) : <View style={{ width: 32, height: 32 }} />}
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Clear button */}
+              {value ? (
+                <TouchableOpacity onPress={() => { onChange(''); setOpen(false); }} style={{ marginTop: 8, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 12, color: '#e74c3c' }}>Limpar data</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </Field>
   );
 }
