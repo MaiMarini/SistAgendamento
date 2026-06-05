@@ -173,7 +173,7 @@ class AuthController extends Controller
                 );
 
                 $resetLink = config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:8081'))
-                    . '/reset-password?token=' . $token . '&email=' . urlencode($user->email);
+                    . '?type=recovery&token=' . $token . '&email=' . urlencode($user->email);
 
                 Mail::to($user->email)->send(new PasswordResetMail($resetLink));
             }
